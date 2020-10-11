@@ -189,7 +189,7 @@ class PDA(Generic[ET]):  # Probabilistic Data Association
     def init_filter_state(
         self,
         # need to have the type required by the specified state_filter
-        init_state: "ET_like",
+        init_state: ET,
     ) -> ET:
         """Initialize a filter state to proper form."""
         return self.state_filter.init_filter_state(init_state)

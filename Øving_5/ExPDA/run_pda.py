@@ -97,12 +97,14 @@ th = ax2.set_title(f"measurements at step 0")
 ax2.axis([0, 700, -100, 300])
 plotpause = 0.003
 # sets a pause in between time steps if it goes to fast
+'''
 for k, Zk in enumerate(Z):
     sh.set_offsets(Zk)
     th.set_text(f"measurements at step {k}")
     fig2.canvas.draw_idle()
     plt.show(block=False)
     plt.pause(plotpause)
+'''
 # %%
 sigma_a = 2.2# TODO
 sigma_z = 3.2# TODO
@@ -150,6 +152,7 @@ x_hat = np.array([upd.mean for upd in tracker_update_list])
 # calculate a performance metric
 posRMSE = np.sqrt(np.mean(np.sum((x_hat[:, :2] - Xgt[:, :2]) ** 2, axis=1)))# TODO: position RMSE
 velRMSE = np.sqrt(np.mean(np.sum((x_hat[:, 2:4] - Xgt[:, 2:4]) ** 2, axis=1)))# TODO: velocity RMSE
+
 
 # %% plots
 fig3, ax3 = plt.subplots(num=3, clear=True)
@@ -199,4 +202,5 @@ axs5[0].set_ylabel("position error")
 
 axs5[1].plot(np.arange(K) * Ts, np.linalg.norm(x_hat[:, 2:4] - Xgt[:, 2:4], axis=1))
 axs5[1].set_ylabel("velocity error")
+
 # %%
