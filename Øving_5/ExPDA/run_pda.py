@@ -140,10 +140,12 @@ tracker_predict_list = []
 for k, (Zk, x_true_k) in enumerate(zip(Z, Xgt)):
     tracker_predict = tracker.predict(tracker_update, Ts) # TODO
     tracker_update = tracker.update(Zk, tracker_predict) # TODO
-    NEES[k] = tracker.state_filter.NEES(tracker_update, x_true_k, idx=np.arange(4))# TODO
-    #NEES[k] = eststat.NEES(tracker_update.estimate, tracker_update.cov, x_true_k)
-    NEESpos[k] = tracker.state_filter.NEES(tracker_update, x_true_k, idx=np.arange(2))# TODO
-    NEESvel[k] = tracker.state_filter.NEES(tracker_update, x_true_k, idx=np.arange(2,4))# TODO
+    #NEES[k] = tracker.state_filter.NEES(tracker_update, x_true_k, idx=np.arange(4))# TODO
+    #NEESpos[k] = tracker.state_filter.NEES(tracker_update, x_true_k, idx=np.arange(2))# TODO
+    #NEESvel[k] = tracker.state_filter.NEES(tracker_update, x_true_k, idx=np.arange(2,4))# TODO
+    NEES[k] = eststat.NEES(tracker_update.estimate, tracker_update.cov, x_true_k, idxs=np.arange(4))
+    NEESpos[k] = eststat.NEES(tracker_update.estimate, tracker_update.cov, x_true_k, idxs=np.arange(2))
+    NEESvel[k] = eststat.NEES(tracker_update.estimate, tracker_update.cov, x_true_k, idxs=np.arange(2,4))
 
     tracker_predict_list.append(tracker_predict)
     tracker_update_list.append(tracker_update)
