@@ -183,6 +183,18 @@ class EKF:
         ekfstate_pred = self.predict(ekfstate, Ts)
         ekfstate_upd = self.update(z, ekfstate_pred, sensor_state=sensor_state)
         return ekfstate_upd
+    
+    @classmethod
+    def NEES(cls,
+        ekfstate: GaussParams,
+        # The true state to comapare against
+        x_true: np.ndarray,
+    ) -> float:
+        """Calculate the normalized etimation error squared from ekfstate to x_true."""
+        x, P = ekfstate
+        x_diff = x - x_true
+        NEES = x_diff.transpose() @ la.inv(P) @ x_diff
+        return NEES
 
     def NIS(
         self,

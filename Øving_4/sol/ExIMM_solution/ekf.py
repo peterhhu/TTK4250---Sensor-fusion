@@ -240,7 +240,7 @@ class EKF:
         P = np.array([c.cov for c in ekfstate_mixture.components], dtype=float)
         x_reduced, P_reduced = mixturereduction.gaussian_mixture_moments(w, x, P)
         return GaussParams(x_reduced, P_reduced)
-
+    '''
     def gate(
         self,
         z: np.ndarray,
@@ -254,3 +254,4 @@ class EKF:
 
         raise NotImplementedError  # TODO: remove this line when implemented
         return None  # TODO: a simple comparison should suffice here
+    '''
