@@ -267,7 +267,7 @@ class EKF:
         NIS = self.NIS(z, ekfstate, sensor_state=sensor_state)
 
         #raise NotImplementedError  # TODO: remove this line when implemented
-        return NIS < np.sqrt(gate_size_square)  # TODO: a simple comparison should suffice here
+        return NIS < gate_size_square  # TODO: a simple comparison should suffice here
 
 
     @singledispatchmethod
