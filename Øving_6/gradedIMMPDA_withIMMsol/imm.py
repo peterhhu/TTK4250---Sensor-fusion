@@ -226,13 +226,13 @@ class IMM(Generic[MT]):
 
         mode_conditioned_ll = np.fromiter(
             (
-                None  # TODO: your state filter (fs under) should be able to calculate the mode conditional log likelihood at z from modestate_s
+                fs.loglikelihood(z, modestate_s, sensor_state=sensor_state) # TODO: your state filter (fs under) should be able to calculate the mode conditional log likelihood at z from modestate_s
                 for fs, modestate_s in zip(self.filters, immstate.components)
             ),
             dtype=float,
         )
 
-        ll = None  # weighted average of likelihoods (not log!)
+        ll = logsumexp(mode_conditioned_ll, b=immstate.weights) # TODO weighted average of likelihoods (not log!)
 
         assert np.isfinite(ll), "IMM.loglikelihood: ll not finite"
         assert isinstance(ll, float) or isinstance(
@@ -303,12 +303,12 @@ class IMM(Generic[MT]):
     ) -> bool:
         """Check if z is within the gate of any mode in immstate in sensor_state"""
 
-        raise NotImplementedError  # TODO: remove when implemented
+        #raise NotImplementedError  # TODO: remove when implemented
 
         # TODO: find which of the modes gates the measurement z, Hint: self.filters[0].gate
-        mode_gated: List[bool] = None
+        mode_gated: List[bool] = [self.filters[0].gate(z, immstate, gate_size_square, sensor_state=sensor_state) for mode in immstate.components]
 
-        gated: bool = None  # TODO: check if _any_ of the modes gated the measurement
+        gated: bool = np.any(mode_gated)  # TODO: check if _any_ of the modes gated the measurement
         return gated
 
     def NISes(
