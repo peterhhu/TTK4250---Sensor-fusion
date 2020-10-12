@@ -123,15 +123,15 @@ if play_movie:
 # but no exceptions do not guarantee correct implementation.
 
 # sensor
-sigma_z = 10
-clutter_intensity = 1e-2
+sigma_z = 3.1
+clutter_intensity = 10 ** (-3)
 PD = 0.8
 gate_size = 5
 
 # dynamic models
-sigma_a_CV = 0.5
-sigma_a_CT = 0.5
-sigma_omega = 0.3
+sigma_a_CV = 0.2
+sigma_a_CT = 0.1
+sigma_omega = 0.002 * np.pi
 
 
 # markov chain
