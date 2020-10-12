@@ -273,15 +273,21 @@ class IMM(Generic[MT]):
         )
 
         # flip conditioning order with Bayes to get Pr(s), and Pr(a | s)
-        mode_prob, mode_conditioned_component_prob = None  # TODO
+        mode_prob, mode_conditioned_component_prob = discretebayes.discrete_bayes(weights, component_conditioned_mode_prob)  # TODO
 
         # We need to gather all the state parameters from the associations for mode s into a
         # single list in order to reduce it to a single parameter set.
         # for instance loop through the modes, gather the paramters for the association of this mode
         # into a single list and append the result of self.filters[s].reduce_mixture
         # The mode s for association j should be available as imm_mixture.components[j].components[s]
+        
+        comps_per_mode = zip(*[comp.components for comp in immstate_mixture.components])
 
-        mode_states: List[GaussParams] = None  # TODO
+        mode_states: List[GaussParams] =[
+                                            fs.reduce_mixture(MixtureParameters(mode_s_cond_comb_prob, mode_s_comp))
+                                            for fs, mode_s_cond_comb_prob, mode_s_comp in zip
+                                            (self.filters, mode_conditioned_component_prob, comps_per_mode)
+                                        ] # TODO
 
         immstate_reduced = MixtureParameters(mode_prob, mode_states)
 
