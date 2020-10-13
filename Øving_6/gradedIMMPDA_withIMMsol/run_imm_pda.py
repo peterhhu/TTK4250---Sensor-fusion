@@ -124,7 +124,7 @@ if play_movie:
 
 # sensor
 sigma_z = 3.1
-clutter_intensity = 10 ** (-3)
+clutter_intensity = pow(10,-3)
 PD = 0.8
 gate_size = 5
 

@@ -79,6 +79,7 @@ Z = [zk.T for zk in loaded_data["Z"].ravel()]
 # plot measurements close to the trajectory
 fig1, ax1 = plt.subplots(num=1, clear=True)
 
+gate_size = 5
 Z_plot_data = np.empty((0, 2), dtype=float)
 plot_measurement_distance = 45
 for Zk, xgtk in zip(Z, Xgt):
@@ -104,6 +105,7 @@ if play_movie:
     ax2.axis([mins[0], maxes[0], mins[1], maxes[1]])
     plotpause = 0.1
     # sets a pause in between time steps if it goes to fast
+    
     for k, Zk in enumerate(Z[play_slice]):
         sh.set_offsets(Zk)
         th.set_text(f"measurements at step {k}")
