@@ -128,10 +128,10 @@ clutter_intensity = pow(10,-3)
 PD = 0.8
 gate_size = 5
 
-# dynamic models
-sigma_a_CV = 0.2
-sigma_a_CT = 0.3
-sigma_omega = 0.02 * np.pi """
+""" # dynamic models
+sigma_a_CV = 0.1
+sigma_a_CT = 0.15
+sigma_omega = 0.02 * np.pi
 
 # sensor
 sigma_z = 3
@@ -139,10 +139,10 @@ clutter_intensity = 1e-3
 PD = 0.9
 gate_size = 3
 
-# dynamic models
+""" # dynamic models
 sigma_a_CV = 0.05
 sigma_a_CT = 0.05
-sigma_omega = 0.03
+sigma_omega = 0.03 """
 
 
 # markov chain
@@ -156,7 +156,7 @@ assert np.allclose(np.sum(PI, axis=1), 1), "rows of PI must sum to 1"
 
 mean_init = np.array([0, 0, 0, 0, 0])
 #cov_init = np.diag([1000, 1000, 30, 30, 0.1]) ** 2  # THIS WILL NOT BE GOOD
-cov_init = np.diag([2*sigma_z**2, 2*sigma_z, 3, 3, 0.001]) ** 2 
+cov_init = np.diag([2*sigma_z**2, 2*sigma_z, 100, 100, 0.01]) #** 2 
 mode_probabilities_init = np.array([p10, (1 - p10)])
 mode_states_init = GaussParams(mean_init, cov_init)
 init_imm_state = MixtureParameters(mode_probabilities_init, [mode_states_init] * 2)
