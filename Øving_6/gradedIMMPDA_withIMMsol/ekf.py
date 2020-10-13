@@ -255,7 +255,6 @@ class EKF:
 
         #raise NotImplementedError  # TODO: remove this line when implemented
         return NIS < gate_size_square  # TODO: a simple comparison should suffice here
-
     
     @singledispatchmethod
     def init_filter_state(self, init) -> None:

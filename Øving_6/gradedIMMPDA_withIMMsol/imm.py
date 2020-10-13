@@ -315,7 +315,7 @@ class IMM(Generic[MT]):
         #raise NotImplementedError  # TODO: remove when implemented
 
         # TODO: find which of the modes gates the measurement z, Hint: self.filters[0].gate
-        mode_gated: List[bool] = [self.filters[0].gate(z, immstate, gate_size_square, sensor_state=sensor_state) for mode in immstate.components]
+        mode_gated: List[bool] = [self.filters[0].gate(z, mode, gate_size_square, sensor_state=sensor_state) for mode in immstate.components]
 
         gated: bool = np.any(mode_gated)  # TODO: check if _any_ of the modes gated the measurement
         return gated
