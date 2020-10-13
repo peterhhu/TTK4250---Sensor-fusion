@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 import numpy as np
 import scipy.linalg as la
 import scipy
-#from singledispatchmethod import singledispatchmethod
+from singledispatchmethod import singledispatchmethod
 
 # local
 import dynamicmodels as dynmods
@@ -256,7 +256,7 @@ class EKF:
         #raise NotImplementedError  # TODO: remove this line when implemented
         return NIS < gate_size_square  # TODO: a simple comparison should suffice here
 
-    '''  
+    
     @singledispatchmethod
     def init_filter_state(self, init) -> None:
         raise NotImplementedError(
@@ -290,4 +290,4 @@ class EKF:
         ), f"EKF do not recognize mean and cov keys in the dict {init}."
 
         return GaussParams(mean, cov)
-    '''
+    

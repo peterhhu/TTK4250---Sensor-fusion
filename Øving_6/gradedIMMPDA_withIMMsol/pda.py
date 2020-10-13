@@ -46,8 +46,8 @@ class PDA(Generic[ET]):  # Probabilistic Data Association
                     sensor_state=sensor_state,
                     )
                     for zj in Z
-                    ], 
-                    dtype=bool,
+            ], 
+                dtype=bool,
         ) # TODO: some for loop over elements of Z using self.state_filter.gate
 
         return gated
