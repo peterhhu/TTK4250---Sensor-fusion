@@ -222,12 +222,14 @@ class IMM(Generic[MT]):
         sensor_state: Dict[str, Any] = None,
     ) -> float:
 
-        raise NotImplementedError  # TODO: remove when implemented
+        #raise NotImplementedError  # TODO: remove when implemented
 
         mode_conditioned_ll = np.fromiter(
             (
-                fs.loglikelihood(z, modestate_s, sensor_state=sensor_state) # TODO: your state filter (fs under) should be able to calculate the mode conditional log likelihood at z from modestate_s
-                for fs, modestate_s in zip(self.filters, immstate.components)
+                [
+                    fs.loglikelihood(z, modestate_s, sensor_state=sensor_state) # TODO: your state filter (fs under) should be able to calculate the mode conditional log likelihood at z from modestate_s
+                    for fs, modestate_s in zip(self.filters, immstate.components)
+                ]
             ),
             dtype=float,
         )
@@ -263,7 +265,8 @@ class IMM(Generic[MT]):
             - reduce self.filter[s].reduce_mixture for each s
         """
 
-        raise NotImplementedError  # TODO remove this when done
+        #raise NotImplementedError  # TODO remove this when done
+        
         # extract probabilities as array
         ## eg. association weights/beta: Pr(a)
         weights = immstate_mixture.weights
