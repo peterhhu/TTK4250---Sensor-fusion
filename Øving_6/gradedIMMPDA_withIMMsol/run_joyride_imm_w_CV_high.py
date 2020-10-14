@@ -69,7 +69,7 @@ except Exception as e:
         }
     )
 
-plot_save_path = "./plots/joyride_imm/"
+plot_save_path = "./plots/joyride_imm/high/"
 
 # %% load data and plot
 filename_to_load = "data_joyride.mat"
@@ -123,9 +123,11 @@ sigma_z = 3.1
 clutter_intensity = pow(10,-3)
 PD = 0.8
 gate_size = 5
+
 """ # dynamic models
 sigma_a_CV = 0.1
 sigma_a_CT = 0.15
+sigma_a_CV_high = 5
 sigma_omega = 0.02 * np.pi
 
 # sensor
@@ -141,20 +143,32 @@ sigma_omega = 0.03 """
 
 
 # markov chain
-PI11 = 0.9
-PI22 = 0.9
+PI11 = 0.95  # CV -> C
+PI12 = 0.025  # CV -> CT
+PI13 = 0.025 # CV -> CV_high
 
-p10 = 0.9  # initvalue for mode probabilities
+PI21 = 0.025  # CT -> CV
+PI22 = 0.95  # CT -> CT
+PI23 = 0.025  # CT -> CV_high
 
-PI = np.array([[PI11, (1 - PI11)], [(1 - PI22), PI22]])
+PI31 = 0.025  # CV_high -> CV
+PI32 = 0.025  # CV_high -> CT
+PI33 = 0.95  # CV_high -> CV_high
+
+
+p10 = 0.8 
+p11 = 0.1
+p12 = 0.1
+
+PI = np.array([[PI11, PI12, PI13], [PI21, PI22, PI23], [PI31, PI32, PI33]])
 assert np.allclose(np.sum(PI, axis=1), 1), "rows of PI must sum to 1"
 
 mean_init = np.array([0, 0, 0, 0, 0])
 #cov_init = np.diag([1000, 1000, 30, 30, 0.1]) ** 2  # THIS WILL NOT BE GOOD
 cov_init = np.diag([2*sigma_z**2, 2*sigma_z, 100, 100, 0.01]) #** 2 
-mode_probabilities_init = np.array([p10, (1 - p10)])
+mode_probabilities_init = np.array([p10, p11, p12])
 mode_states_init = GaussParams(mean_init, cov_init)
-init_imm_state = MixtureParameters(mode_probabilities_init, [mode_states_init] * 2)
+init_imm_state = MixtureParameters(mode_probabilities_init, [mode_states_init] * 3)
 
 assert np.allclose(
     np.sum(mode_probabilities_init), 1
@@ -165,9 +179,11 @@ measurement_model = measurementmodels.CartesianPosition(sigma_z, state_dim=5)
 dynamic_models: List[dynamicmodels.DynamicModel] = []
 dynamic_models.append(dynamicmodels.WhitenoiseAccelleration(sigma_a_CV, n=5))
 dynamic_models.append(dynamicmodels.ConstantTurnrate(sigma_a_CT, sigma_omega))
+dynamic_models.append(dynamicmodels.WhitenoiseAccelleration(sigma_a_CV_high, n=5))
 ekf_filters = []
 ekf_filters.append(ekf.EKF(dynamic_models[0], measurement_model))
 ekf_filters.append(ekf.EKF(dynamic_models[1], measurement_model))
+ekf_filters.append(ekf.EKF(dynamic_models[2], measurement_model))
 imm_filter = imm.IMM(ekf_filters, PI)
 
 tracker = pda.PDA(imm_filter, clutter_intensity, PD, gate_size)
