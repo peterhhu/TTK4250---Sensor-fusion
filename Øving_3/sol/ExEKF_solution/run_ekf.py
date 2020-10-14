@@ -167,7 +167,7 @@ for k, (zk, x_true_k) in enumerate(zip(Z[2:], Xgt[2:])):
     diff_pred = ekfpred.mean - x_true_k[:4]
     diff_upd = ekfupd.mean - x_true_k[:4]
     dists_pred[k] = np.linalg.norm(diff_pred[:2]), np.linalg.norm(diff_pred[2:])
-    dists_pred[k] = np.linalg.norm(diff_upd[:2]), np.linalg.norm(diff_upd[2:])
+    dists_upd[k] = np.linalg.norm(diff_upd[:2]), np.linalg.norm(diff_upd[2:])
 
     ekfpred_list.append(ekfpred)
     ekfupd_list.append(ekfupd)
@@ -196,7 +196,7 @@ ax3.set_title(
 # %% Task 5 b and c
 
 # % parameters for the parameter grid
-n_vals = 20
+n_vals = 5
 sigma_a_low = 0.5
 sigma_a_high = 10
 sigma_z_low = 0.3

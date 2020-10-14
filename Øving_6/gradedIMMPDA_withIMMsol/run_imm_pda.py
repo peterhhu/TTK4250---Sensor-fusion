@@ -88,9 +88,12 @@ for Zk, xgtk in zip(Z, Xgt):
     to_plot = np.linalg.norm(Zk - xgtk[None:2], axis=1) <= plot_measurement_distance
     Z_plot_data = np.append(Z_plot_data, Zk[to_plot], axis=0)
 
-ax1.scatter(*Z_plot_data.T, s=5, color="C1")
-ax1.plot(*Xgt.T[:2], color="C0", linewidth=1.5)
+ax1.scatter(*Z_plot_data.T, s=5, color="C1", label="Z")
+ax1.plot(*Xgt.T[:2], color="C0", linewidth=1.5, label="Xgt")
+ax1.set_xlabel("Pos_x")
+ax1.set_ylabel("Pos_y")
 ax1.set_title("True trajectory and the nearby measurements")
+ax1.legend()
 plt.show(block=False)
 
 # %% play measurement movie. Remember that you can cross out the window
@@ -223,16 +226,20 @@ ANEES = np.mean(NEES)
 # trajectory
 fig3, axs3 = plt.subplots(1, 2, num=3, clear=True)
 axs3[0].plot(*x_hat.T[:2], label=r"$\hat x$")
-axs3[0].plot(*Xgt.T[:2], label="$x$")
+axs3[0].plot(*Xgt.T[:2], label="$Xgt$")
 axs3[0].set_title(
     f"RMSE(pos, vel) = ({posRMSE:.3f}, {velRMSE:.3f})\npeak_dev(pos, vel) = ({peak_pos_deviation:.3f}, {peak_vel_deviation:.3f})"
 )
 axs3[0].axis("equal")
+axs3[0].legend()
 # probabilities
-axs3[1].plot(np.arange(K) * Ts, prob_hat)
+axs3[1].plot(np.arange(K) * Ts, prob_hat[:,0], label="CV")
+axs3[1].plot(np.arange(K) * Ts, prob_hat[:,1], label="CT")
 axs3[1].set_ylim([0, 1])
 axs3[1].set_ylabel("mode probability")
 axs3[1].set_xlabel("time")
+axs3[1].legend()
+
 
 # NEES
 fig4, axs4 = plt.subplots(3, sharex=True, num=4, clear=True)
