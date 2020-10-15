@@ -69,7 +69,7 @@ except Exception as e:
         }
     )
 
-#plot_save_path = "./plots/joyride_ekf/"
+plot_save_path = "./plots/joyride_ekf/"
 
 # %% load data and plot
 filename_to_load = "data_joyride.mat"
@@ -125,13 +125,13 @@ PD = 0.9
 gate_size = 5
 
 # dynamic models
-sigma_a_CV = 0.05
-sigma_a_CT = 0.1
-sigma_omega = 0.2 * np.pi
+sigma_a_CV = 6
+sigma_a_CT = 6
+sigma_omega = 0.2 #* np.pi
 
 mean_init = Xgt[0]
 mean_init = np.append(mean_init, 0.1)
-cov_init = np.diag([2*sigma_z**2, 2*sigma_z**2, 3, 3, 0.1])
+cov_init = np.diag([2*sigma_z, 2*sigma_z, 0.5, 0.5, 0.1])
 
 # make model
 measurement_model = measurementmodels.CartesianPosition(sigma_z, state_dim=5)
@@ -239,7 +239,7 @@ for i in range(posRMSE.shape[0]):
     )
      
 
-#plt.savefig(plot_save_path + "trajectories.eps", format="eps")
+plt.savefig(plot_save_path + "trajectories.eps", format="eps")
 
 # NEES
 for i in range(NEESpos.shape[0]):
@@ -262,19 +262,20 @@ for i in range(NEESpos.shape[0]):
     inCI = np.mean((CI4[0] <= NEES) * (NEES <= CI4[1]))
     axs4[2].set_title(f"{inCI*100:.1f}% inside {confprob*100:.1f}% CI")
 
-    #plt.savefig(plot_save_path + f"NEES_CI_{names[i]}.eps", format="eps")
+    plt.savefig(plot_save_path + f"NEES_CI_{names[i]}.eps", format="eps")
 
     plt.show()
 
 # errors
 for i,_ in enumerate(trackers):
     fig5, axs5 = plt.subplots(2, num=5, clear=True) 
-    axs5[0].plot(np.arange(K) * Ts, np.linalg.norm(x_hat[i][:, :2] - Xgt[:, :2], axis=1))
+    axs5[0].set_title(names[i])
+    axs5[0].plot(np.arange(K) * T_mean, np.linalg.norm(x_hat[i][:, :2] - Xgt[:, :2], axis=1))
     axs5[0].set_ylabel("position error")
 
-    axs5[1].plot(np.arange(K) * Ts, np.linalg.norm(x_hat[i][:, 2:4] - Xgt[:, 2:4], axis=1))
+    axs5[1].plot(np.arange(K) * T_mean, np.linalg.norm(x_hat[i][:, 2:4] - Xgt[:, 2:4], axis=1))
     axs5[1].set_ylabel("velocity error")
 
-    #plt.savefig(plot_save_path + f"pos_vel_error.eps", format="eps")
+    plt.savefig(plot_save_path + f"pos_vel_error.eps", format="eps")
 
     plt.show()

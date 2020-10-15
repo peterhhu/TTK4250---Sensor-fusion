@@ -1,0 +1,46 @@
+#############################################################
+Not good at all, but it's a start
+
+# sensor
+sigma_z = 6
+clutter_intensity = 1e-5
+PD = 0.9
+gate_size = 5
+
+# dynamic models
+sigma_a_CV = 6
+sigma_a_CT = 6
+sigma_omega = 0.2 #* np.pi
+
+mean_init = Xgt[0]
+mean_init = np.append(mean_init, 0.1)
+cov_init = np.diag([sigma_z, sigma_z, 3, 3, 0.1])
+
+
+#############################################################
+A bit better, but still a lot of error
+
+# sensor
+sigma_z = 6
+clutter_intensity = 1e-5
+PD = 0.9
+gate_size = 5
+
+# dynamic models
+sigma_a_CV = 6
+sigma_a_CT = 6
+sigma_omega = 0.2 #* np.pi
+
+mean_init = Xgt[0]
+mean_init = np.append(mean_init, 0.1)
+cov_init = np.diag([sigma_z, sigma_z, 0.5, 0.5, 0.1])
+
+#############################################################
+
+
+
+#############################################################
+
+#############################################################
+
+#############################################################
