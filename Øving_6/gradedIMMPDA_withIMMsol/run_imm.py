@@ -97,7 +97,7 @@ ax1.scatter(*Z.T[:2])
 
 # parameters
 sigma_z = 3
-sigma_a_CV = 0.3
+sigma_a_CV = 0.2
 sigma_a_CT = 0.1
 sigma_omega = 0.002 * np.pi
 
@@ -189,6 +189,7 @@ for axu, axl, u_s, rmse_pred, rmse_upd in zip(
     # ax.scatter(*Z.T)
     x = np.array([data.mean for data in u_s])
     axu.plot(*x.T[:2])
+    axu.plot(*Xgt.T[:2])
     rmsestr = ", ".join(f"{num:.3f}" for num in (*rmse_upd, *rmse_pred))
     axu.set_title(f"RMSE(p_u, v_u, p_pr, v_pr)|\n{rmsestr}|")
     axu.axis("equal")
