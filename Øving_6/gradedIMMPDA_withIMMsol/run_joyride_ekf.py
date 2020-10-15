@@ -69,7 +69,7 @@ except Exception as e:
         }
     )
 
-plot_save_path = "./plots/"
+#plot_save_path = "./plots/joyride_ekf/"
 
 # %% load data and plot
 filename_to_load = "data_joyride.mat"
@@ -125,13 +125,13 @@ PD = 0.9
 gate_size = 5
 
 # dynamic models
-sigma_a_CV = 2
-sigma_a_CT = 3
-sigma_omega = 0.2
+sigma_a_CV = 0.05
+sigma_a_CT = 0.1
+sigma_omega = 0.2 * np.pi
 
 mean_init = Xgt[0]
 mean_init = np.append(mean_init, 0.1)
-cov_init = np.diag([sigma_z, sigma_z, 3, 3, 0.1]) ** 2
+cov_init = np.diag([2*sigma_z**2, 2*sigma_z**2, 3, 3, 0.1])
 
 # make model
 measurement_model = measurementmodels.CartesianPosition(sigma_z, state_dim=5)
@@ -149,16 +149,15 @@ trackers.append(pda.PDA(ekf_filters[1], clutter_intensity, PD, gate_size)) # EKF
 names = ["CV_EKF", "CT_EKF"]
 
 init_ekf_state = GaussParams(mean_init, cov_init)
-# init_imm_pda_state = tracker.init_filter_state(init_ekf_state)
 
 NEES = np.zeros(K)
 NEESpos = np.zeros(K)
 NEESvel = np.zeros(K)
 
 tracker_update_init = [init_ekf_state, init_ekf_state]
-tracker_update_list = np.empty((len(trackers), len(Xgt)), dtype=MixtureParameters)
-tracker_predict_list = np.empty((len(trackers), len(Xgt)), dtype=MixtureParameters)
-tracker_estimate_list = np.empty((len(trackers), len(Xgt)), dtype=MixtureParameters)
+tracker_update_list = np.empty((len(trackers), len(Xgt)), dtype=GaussParams)
+tracker_predict_list = np.empty((len(trackers), len(Xgt)), dtype=GaussParams)
+tracker_estimate_list = np.empty((len(trackers), len(Xgt)), dtype=GaussParams)
 # estimate
 Ts = np.insert(Ts,0, 0., axis=0)
 
@@ -186,20 +185,20 @@ for i, (tracker, name) in enumerate(zip(trackers, names)):
         NEESvel[i][k] = estats.NEES(*tracker_estimate, x_true_k, idxs=np.arange(2, 4))
 
         tracker_predict_list[i][k]= tracker_predict
-        tracker_update_list[i][k] = (tracker_update)
-        tracker_estimate_list[i][k] = (tracker_estimate)
+        tracker_update_list[i][k] = tracker_update
+        tracker_estimate_list[i][k] = tracker_estimate
 
     x_hat[i] = np.array([est.mean for est in tracker_estimate_list[i]])
 
 # calculate performance metrics
-posRMSE = np.empty((len(trackers),1), dtype=float)
-velRMSE = np.empty((len(trackers),1), dtype=float)
-peak_pos_deviation = np.empty((len(trackers),1), dtype=float)
-peak_vel_deviation = np.empty((len(trackers),1), dtype=float)
+posRMSE = np.empty((len(trackers)), dtype=float)
+velRMSE = np.empty((len(trackers)), dtype=float)
+peak_pos_deviation = np.empty((len(trackers)), dtype=float)
+peak_vel_deviation = np.empty((len(trackers)), dtype=float)
 
 for i,_ in enumerate(trackers):
-    poserr = np.linalg.norm(x_hat[i,:, :2] - Xgt[:, :2], axis=0)
-    velerr = np.linalg.norm(x_hat[i,:, 2:4] - Xgt[:, 2:4], axis=0)
+    poserr = np.linalg.norm(x_hat[i,:, :2] - Xgt[:, :2], axis=1)
+    velerr = np.linalg.norm(x_hat[i,:, 2:4] - Xgt[:, 2:4], axis=1)
     posRMSE[i] = np.sqrt(
         np.mean(poserr ** 2)
     )  # not true RMSE (which is over monte carlo simulations)
@@ -220,20 +219,31 @@ ANEESpos = np.mean(NEESpos)
 ANEESvel = np.mean(NEESvel)
 ANEES = np.mean(NEES)
 
+print(f"ANEESpos = {ANEESpos:.2f} with CI = [{CI2K[0]:.2f}, {CI2K[1]:.2f}]")
+print(f"ANEESvel = {ANEESvel:.2f} with CI = [{CI2K[0]:.2f}, {CI2K[1]:.2f}]")
+print(f"ANEES = {ANEES:.2f} with CI = [{CI4K[0]:.2f}, {CI4K[1]:.2f}]")
+
 # %% plots
 # trajectory
-fig3, axs3 = plt.subplots(num=3, clear=True, figsize=(10,5))
-axs3.plot(*x_hat.T[:2], label=r"$\hat x$")
-axs3.plot(*Xgt.T[:2], label="$x$")
-# axs3.set_title(
-#     f"RMSE(pos, vel) = ({posRMSE:.3f}, {velRMSE:.3f})\npeak_dev(pos, vel) = ({peak_pos_deviation:.3f}, {peak_vel_deviation:.3f})"
-# )
+fig3, axs3 = plt.subplots(1, 2, num=2, clear=True)
+for i in range(posRMSE.shape[0]):
+    if i == 0:
+        axs3[i].plot(*x_hat[0].T[:2], label=r"$\hat {x} CV$")
+    else:
+        axs3[i].plot(*x_hat[1].T[:2], label=r"$\hat {x} CT$")
 
-plt.savefig(plot_save_path + "traectories.pdf", format="pdf")
+    axs3[i].plot(*Xgt.T[:2], label=r"$X_{gt}$")
+    axs3[i].legend()
+    axs3[i].set_title(
+         f"RMSE(pos, vel) = ({posRMSE[i]:.3f}, {velRMSE[i]:.3f})\npeak_dev(pos, vel) = ({peak_pos_deviation[i]:.3f}, {peak_vel_deviation[i]:.3f})"
+    )
+     
+
+#plt.savefig(plot_save_path + "trajectories.eps", format="eps")
 
 # NEES
 for i in range(NEESpos.shape[0]):
-    fig4, axs4 = plt.subplots(3, sharex=True, num=4, clear=True, figsize=(10, 10))
+    fig4, axs4 = plt.subplots(3, sharex=True, num=4, clear=True)
     axs4[0].plot(np.arange(K) * T_mean, NEESpos[i,:,:])
     axs4[0].plot([0, (K - 1) * T_mean], np.repeat(CI2[None], 2, 0), "--r")
     axs4[0].set_ylabel("NEES pos")
@@ -249,8 +259,22 @@ for i in range(NEESpos.shape[0]):
     axs4[2].plot(np.arange(K) * T_mean, NEES[i,:,:])
     axs4[2].plot([0, (K - 1) * T_mean], np.repeat(CI4[None], 2, 0), "--r")
     axs4[2].set_ylabel("NEES")
-    inCI = np.mean((CI2[0] <= NEES) * (NEES <= CI2[1]))
+    inCI = np.mean((CI4[0] <= NEES) * (NEES <= CI4[1]))
     axs4[2].set_title(f"{inCI*100:.1f}% inside {confprob*100:.1f}% CI")
 
-    plt.savefig(plot_save_path + f"NIS_NEES_CI_{names[i]}.pdf", format="pdf")
-    #plt.show()
+    #plt.savefig(plot_save_path + f"NEES_CI_{names[i]}.eps", format="eps")
+
+    plt.show()
+
+# errors
+for i,_ in enumerate(trackers):
+    fig5, axs5 = plt.subplots(2, num=5, clear=True) 
+    axs5[0].plot(np.arange(K) * Ts, np.linalg.norm(x_hat[i][:, :2] - Xgt[:, :2], axis=1))
+    axs5[0].set_ylabel("position error")
+
+    axs5[1].plot(np.arange(K) * Ts, np.linalg.norm(x_hat[i][:, 2:4] - Xgt[:, 2:4], axis=1))
+    axs5[1].set_ylabel("velocity error")
+
+    #plt.savefig(plot_save_path + f"pos_vel_error.eps", format="eps")
+
+    plt.show()

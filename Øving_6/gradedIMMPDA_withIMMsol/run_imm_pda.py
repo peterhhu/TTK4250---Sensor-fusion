@@ -138,6 +138,7 @@ sigma_omega = 0.02 * np.pi
 
 # markov chain
 PI11 = 0.9
+
 PI22 = 0.9
 
 p10 = 0.9  # initvalue for mode probabilities
@@ -145,8 +146,8 @@ p10 = 0.9  # initvalue for mode probabilities
 PI = np.array([[PI11, (1 - PI11)], [(1 - PI22), PI22]])
 assert np.allclose(np.sum(PI, axis=1), 1), "rows of PI must sum to 1"
 
-mean_init = np.array([0, 20, 0, 0, 0])
-cov_init = np.diag([2*sigma_z**2, 2*sigma_z**2, 200, 300, 0.1])
+mean_init = np.array([2, 20, 4, 0, 0])
+cov_init = np.diag([2*sigma_z**2, 2*sigma_z**2, 25, 100, 0.01])
 mode_probabilities_init = np.array([p10, (1 - p10)])
 mode_states_init = GaussParams(mean_init, cov_init)
 init_imm_state = MixtureParameters(mode_probabilities_init, [mode_states_init] * 2)
