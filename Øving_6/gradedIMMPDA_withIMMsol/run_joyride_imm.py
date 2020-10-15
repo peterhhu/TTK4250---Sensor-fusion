@@ -69,7 +69,7 @@ except Exception as e:
         }
     )
 
-plot_save_path = "./plots/joyride_imm/"
+#plot_save_path = "./plots/joyride_imm/"
 
 # %% load data and plot
 filename_to_load = "data_joyride.mat"
@@ -118,30 +118,20 @@ if play_movie:
 
 # %% setup and track
 
-""" # sensor
-sigma_z = 3.1
-clutter_intensity = pow(10,-3)
-PD = 0.8
-gate_size = 5
-""" # dynamic models
-sigma_a_CV = 0.1
-sigma_a_CT = 0.15
-sigma_omega = 0.02 * np.pi
-
 # sensor
-sigma_z = 3
-clutter_intensity = 1e-3
+sigma_z = 6
+clutter_intensity = 1e-5
 PD = 0.9
-gate_size = 3
+gate_size = 5
 
-""" # dynamic models
-sigma_a_CV = 0.05
-sigma_a_CT = 0.05
-sigma_omega = 0.03 """
-
+# dynamic models
+sigma_a_CV = 6
+sigma_a_CT = 6
+sigma_omega = 0.02 #* np.pi
 
 # markov chain
 PI11 = 0.9
+
 PI22 = 0.9
 
 p10 = 0.9  # initvalue for mode probabilities
@@ -149,9 +139,9 @@ p10 = 0.9  # initvalue for mode probabilities
 PI = np.array([[PI11, (1 - PI11)], [(1 - PI22), PI22]])
 assert np.allclose(np.sum(PI, axis=1), 1), "rows of PI must sum to 1"
 
-mean_init = np.array([0, 0, 0, 0, 0])
-#cov_init = np.diag([1000, 1000, 30, 30, 0.1]) ** 2  # THIS WILL NOT BE GOOD
-cov_init = np.diag([2*sigma_z**2, 2*sigma_z, 100, 100, 0.01]) #** 2 
+mean_init = Xgt[0]
+mean_init = np.append(mean_init, 0.1)
+cov_init = np.diag([2*sigma_z, 2*sigma_z, 0.5, 0.5, 0.01])
 mode_probabilities_init = np.array([p10, (1 - p10)])
 mode_states_init = GaussParams(mean_init, cov_init)
 init_imm_state = MixtureParameters(mode_probabilities_init, [mode_states_init] * 2)
@@ -171,9 +161,6 @@ ekf_filters.append(ekf.EKF(dynamic_models[1], measurement_model))
 imm_filter = imm.IMM(ekf_filters, PI)
 
 tracker = pda.PDA(imm_filter, clutter_intensity, PD, gate_size)
-
-# init_imm_pda_state = tracker.init_filter_state(init__immstate)
-
 
 NEES = np.zeros(K)
 NEESpos = np.zeros(K)
@@ -204,8 +191,8 @@ x_hat = np.array([est.mean for est in tracker_estimate_list])
 prob_hat = np.array([upd.weights for upd in tracker_update_list])
 
 # calculate a performance metrics
-poserr = np.linalg.norm(x_hat[:, :2] - Xgt[:, :2], axis=1) #################
-velerr = np.linalg.norm(x_hat[:, 2:4] - Xgt[:, 2:4], axis=1) ################
+poserr = np.linalg.norm(x_hat[:, :2] - Xgt[:, :2], axis=1)
+velerr = np.linalg.norm(x_hat[:, 2:4] - Xgt[:, 2:4], axis=1)
 posRMSE = np.sqrt(
     np.mean(poserr ** 2)
 )  # not true RMSE (which is over monte carlo simulations)
@@ -231,18 +218,21 @@ ANEES = np.mean(NEES)
 # trajectory
 fig3, axs3 = plt.subplots(1, 2, num=3, clear=True)
 axs3[0].plot(*x_hat.T[:2], label=r"$\hat x$")
-axs3[0].plot(*Xgt.T[:2], label="$x$")
+axs3[0].plot(*Xgt.T[:2], label="$Xgt$")
 axs3[0].set_title(
     f"RMSE(pos, vel) = ({posRMSE:.3f}, {velRMSE:.3f})\npeak_dev(pos, vel) = ({peak_pos_deviation:.3f}, {peak_vel_deviation:.3f})"
 )
 axs3[0].axis("equal")
+axs3[0].legend()
 # probabilities
-axs3[1].plot(np.arange(K) * T_mean, prob_hat)
+axs3[1].plot(np.arange(K) * T_mean, prob_hat[:,0], label="CV")
+axs3[1].plot(np.arange(K) * T_mean, prob_hat[:,1], label="CT")
 axs3[1].set_ylim([0, 1])
 axs3[1].set_ylabel("mode probability")
 axs3[1].set_xlabel("time")
+axs3[1].legend()
 
-plt.savefig(plot_save_path + "mode_probs.pdf", format="pdf")
+#plt.savefig(plot_save_path + "trajectories.eps", format="eps")
 
 # NEES
 fig4, axs4 = plt.subplots(3, sharex=True, num=4, clear=True)
@@ -261,12 +251,14 @@ axs4[1].set_title(f"{inCIvel*100:.1f}% inside {confprob*100:.1f}% CI")
 axs4[2].plot(np.arange(K) * T_mean, NEES)
 axs4[2].plot([0, (K - 1) * T_mean], np.repeat(CI4[None], 2, 0), "--r")
 axs4[2].set_ylabel("NEES")
-inCI = np.mean((CI2[0] <= NEES) * (NEES <= CI2[1])) ################################
+inCI = np.mean((CI4[0] <= NEES) * (NEES <= CI4[1]))
 axs4[2].set_title(f"{inCI*100:.1f}% inside {confprob*100:.1f}% CI")
 
 print(f"ANEESpos = {ANEESpos:.2f} with CI = [{CI2K[0]:.2f}, {CI2K[1]:.2f}]")
 print(f"ANEESvel = {ANEESvel:.2f} with CI = [{CI2K[0]:.2f}, {CI2K[1]:.2f}]")
 print(f"ANEES = {ANEES:.2f} with CI = [{CI4K[0]:.2f}, {CI4K[1]:.2f}]")
+
+#plt.savefig(plot_save_path + "NEES.eps", format="eps")
 
 # errors
 fig5, axs5 = plt.subplots(2, num=5, clear=True)
@@ -276,6 +268,6 @@ axs5[0].set_ylabel("position error")
 axs5[1].plot(np.arange(K) * T_mean, np.linalg.norm(x_hat[:, 2:4] - Xgt[:, 2:4], axis=1))
 axs5[1].set_ylabel("velocity error")
 
-plt.savefig(plot_save_path + "errors.pdf", format="pdf")
+#plt.savefig(plot_save_path + "pos_vel_error.eps", format="eps")
 
 plt.show()

@@ -150,9 +150,9 @@ names = ["CV_EKF", "CT_EKF"]
 
 init_ekf_state = GaussParams(mean_init, cov_init)
 
-NEES = np.zeros(K)
-NEESpos = np.zeros(K)
-NEESvel = np.zeros(K)
+# NEES = np.zeros(K)
+# NEESpos = np.zeros(K)
+# NEESvel = np.zeros(K)
 
 tracker_update_init = [init_ekf_state, init_ekf_state]
 tracker_update_list = np.empty((len(trackers), len(Xgt)), dtype=GaussParams)
@@ -164,9 +164,9 @@ Ts = np.insert(Ts,0, 0., axis=0)
 x_hat = np.empty((len(trackers), len(Xgt), 5))
 prob_hat = np.empty((len(trackers), len(Xgt), 2))
 
-NEES = np.empty((len(trackers), len(Xgt), 1))
-NEESpos = np.empty((len(trackers), len(Xgt), 1))
-NEESvel = np.empty((len(trackers), len(Xgt), 1))
+NEES = np.empty((len(trackers), len(Xgt)))
+NEESpos = np.empty((len(trackers), len(Xgt)))
+NEESvel = np.empty((len(trackers), len(Xgt)))
 
 for i, (tracker, name) in enumerate(zip(trackers, names)):
     print("Running: ",name)
@@ -244,22 +244,22 @@ plt.savefig(plot_save_path + "trajectories.eps", format="eps")
 # NEES
 for i in range(NEESpos.shape[0]):
     fig4, axs4 = plt.subplots(3, sharex=True, num=4, clear=True)
-    axs4[0].plot(np.arange(K) * T_mean, NEESpos[i,:,:])
+    axs4[0].plot(np.arange(K) * T_mean, NEESpos[i,:])
     axs4[0].plot([0, (K - 1) * T_mean], np.repeat(CI2[None], 2, 0), "--r")
     axs4[0].set_ylabel("NEES pos")
-    inCIpos = np.mean((CI2[0] <= NEESpos) * (NEESpos <= CI2[1]))
+    inCIpos = np.mean((CI2[0] <= NEESpos[i,:]) * (NEESpos[i,:] <= CI2[1]))
     axs4[0].set_title(f"{inCIpos*100:.1f}% inside {confprob*100:.1f}% CI")
 
-    axs4[1].plot(np.arange(K) * T_mean, NEESvel[i,:,:])
+    axs4[1].plot(np.arange(K) * T_mean, NEESvel[i,:])
     axs4[1].plot([0, (K - 1) * T_mean], np.repeat(CI2[None], 2, 0), "--r")
     axs4[1].set_ylabel("NEES vel")
-    inCIvel = np.mean((CI2[0] <= NEESvel) * (NEESvel <= CI2[1]))
+    inCIvel = np.mean((CI2[0] <= NEESvel[i,:]) * (NEESvel[i,:] <= CI2[1]))
     axs4[1].set_title(f"{inCIvel*100:.1f}% inside {confprob*100:.1f}% CI")
 
-    axs4[2].plot(np.arange(K) * T_mean, NEES[i,:,:])
+    axs4[2].plot(np.arange(K) * T_mean, NEES[i,:])
     axs4[2].plot([0, (K - 1) * T_mean], np.repeat(CI4[None], 2, 0), "--r")
     axs4[2].set_ylabel("NEES")
-    inCI = np.mean((CI4[0] <= NEES) * (NEES <= CI4[1]))
+    inCI = np.mean((CI4[0] <= NEES[i,:]) * (NEES[i,:] <= CI4[1]))
     axs4[2].set_title(f"{inCI*100:.1f}% inside {confprob*100:.1f}% CI")
 
     plt.savefig(plot_save_path + f"NEES_CI_{names[i]}.eps", format="eps")
