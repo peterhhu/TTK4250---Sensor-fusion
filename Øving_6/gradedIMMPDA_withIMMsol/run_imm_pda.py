@@ -89,7 +89,7 @@ for Zk, xgtk in zip(Z, Xgt):
     Z_plot_data = np.append(Z_plot_data, Zk[to_plot], axis=0)
 
 ax1.scatter(*Z_plot_data.T, s=5, color="C1", label="Z")
-ax1.plot(*Xgt.T[:2], color="C0", linewidth=1.5, label="Xgt")
+ax1.plot(*Xgt.T[:2], color="C0", linewidth=1.5, label=r"$x_{gt}$")
 ax1.set_xlabel("Pos_x")
 ax1.set_ylabel("Pos_y")
 ax1.set_title("True trajectory and the nearby measurements")
@@ -146,7 +146,7 @@ p10 = 0.9  # initvalue for mode probabilities
 PI = np.array([[PI11, (1 - PI11)], [(1 - PI22), PI22]])
 assert np.allclose(np.sum(PI, axis=1), 1), "rows of PI must sum to 1"
 
-mean_init = np.array([2, 20, 4, 0, 0])
+mean_init = np.array([2, 20, 0, 0, 0])
 cov_init = np.diag([2*sigma_z**2, 2*sigma_z**2, 25, 100, 0.01])
 mode_probabilities_init = np.array([p10, (1 - p10)])
 mode_states_init = GaussParams(mean_init, cov_init)
@@ -227,7 +227,9 @@ ANEES = np.mean(NEES)
 # trajectory
 fig3, axs3 = plt.subplots(1, 2, num=3, clear=True)
 axs3[0].plot(*x_hat.T[:2], label=r"$\hat x$")
-axs3[0].plot(*Xgt.T[:2], label="$Xgt$")
+axs3[0].plot(*Xgt.T[:2], label=r"$x_{gt}$")
+axs3[0].set_xlabel("x_pos")
+axs3[0].set_xlabel("y_pos")
 axs3[0].set_title(
     f"RMSE(pos, vel) = ({posRMSE:.3f}, {velRMSE:.3f})\npeak_dev(pos, vel) = ({peak_pos_deviation:.3f}, {peak_vel_deviation:.3f})"
 )
@@ -270,9 +272,11 @@ print(f"ANEES = {ANEES:.2f} with CI = [{CI4K[0]:.2f}, {CI4K[1]:.2f}]")
 fig5, axs5 = plt.subplots(2, num=5, clear=True)
 axs5[0].plot(np.arange(K) * Ts, np.linalg.norm(x_hat[:, :2] - Xgt[:, :2], axis=1))
 axs5[0].set_ylabel("position error")
+axs5[0].set_xlabel("time")
 
 axs5[1].plot(np.arange(K) * Ts, np.linalg.norm(x_hat[:, 2:4] - Xgt[:, 2:4], axis=1))
 axs5[1].set_ylabel("velocity error")
+axs5[1].set_xlabel("time")
 
 plt.show()
 

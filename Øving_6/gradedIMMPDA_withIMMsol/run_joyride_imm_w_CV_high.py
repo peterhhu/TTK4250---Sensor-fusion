@@ -119,29 +119,29 @@ if play_movie:
 # %% setup and track
 
 # sensor
-sigma_z = 6
+sigma_z = 25
 clutter_intensity = 1e-5
 PD = 0.9
 gate_size = 5
 
 # dynamic models
-sigma_a_CV = 6
-sigma_a_CT = 6
-sigma_a_CV_high = 2
-sigma_omega = 0.02 #* np.pi
+sigma_a_CV = 0.1
+sigma_a_CT = 0.1
+sigma_a_CV_high = 10
+sigma_omega = 0.01 #* np.pi
 
 # markov chain
-PI11 = 0.95  # CV -> CV
-PI12 = 0.025  # CV -> CT
-PI13 = 0.025 # CV -> CV_high
+PI11 = 0.8  # CV -> CV
+PI12 = 0.1 # CV -> CT
+PI13 = 0.1 # CV -> CV_high
 
-PI21 = 0.025  # CT -> CV
-PI22 = 0.95  # CT -> CT
-PI23 = 0.025  # CT -> CV_high
+PI21 = 0.1  # CT -> CV
+PI22 = 0.9  # CT -> CT
+PI23 = 0.0  # CT -> CV_high
 
-PI31 = 0.025  # CV_high -> CV
-PI32 = 0.025  # CV_high -> CT
-PI33 = 0.95  # CV_high -> CV_high
+PI31 = 0.1  # CV_high -> CV
+PI32 = 0.0  # CV_high -> CT
+PI33 = 0.9  # CV_high -> CV_high
 
 
 p10 = 0.8 
@@ -153,7 +153,7 @@ assert np.allclose(np.sum(PI, axis=1), 1), "rows of PI must sum to 1"
 
 mean_init = Xgt[0]
 mean_init = np.append(mean_init, 0.1)
-cov_init = np.diag([2*sigma_z, 2*sigma_z, 0.5, 0.5, 0.01])
+cov_init = np.diag([2*sigma_z, 2*sigma_z, 2, 2, 0.1])
 mode_probabilities_init = np.array([p10, p11, p12])
 mode_states_init = GaussParams(mean_init, cov_init)
 init_imm_state = MixtureParameters(mode_probabilities_init, [mode_states_init] * 3)

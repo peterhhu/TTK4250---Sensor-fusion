@@ -1,0 +1,42 @@
+
+
+ANEESpos = 1.34 with CI = [1.77, 2.24]
+ANEESvel = 0.65 with CI = [1.77, 2.24]
+ANEES = 2.29 with CI = [3.68, 4.33]
+
+# sensor
+sigma_z = 10
+clutter_intensity = 1e-5
+PD = 0.9
+gate_size = 5
+
+# dynamic models
+sigma_a_CV = 1
+sigma_a_CT = 0.5
+sigma_a_CV_high = 10
+sigma_omega = 0.1 #* np.pi
+
+# markov chain
+PI11 = 0.9  # CV -> CV
+PI12 = 0.05  # CV -> CT
+PI13 = 0.05 # CV -> CV_high
+
+PI21 = 0.05  # CT -> CV
+PI22 = 0.9  # CT -> CT
+PI23 = 0.05  # CT -> CV_high
+
+PI31 = 0.05  # CV_high -> CV
+PI32 = 0.05  # CV_high -> CT
+PI33 = 0.9  # CV_high -> CV_high
+
+
+p10 = 0.8 
+p11 = 0.1
+p12 = 0.1
+
+PI = np.array([[PI11, PI12, PI13], [PI21, PI22, PI23], [PI31, PI32, PI33]])
+assert np.allclose(np.sum(PI, axis=1), 1), "rows of PI must sum to 1"
+
+mean_init = Xgt[0]
+mean_init = np.append(mean_init, 0.1)
+cov_init = np.diag([2*sigma_z, 2*sigma_z, 2, 2, 0.1])

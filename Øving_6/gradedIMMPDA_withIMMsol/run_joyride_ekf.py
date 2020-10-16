@@ -119,19 +119,19 @@ if play_movie:
 # %% setup and track
 
 # sensor
-sigma_z = 6
+sigma_z = 10
 clutter_intensity = 1e-5
 PD = 0.9
 gate_size = 5
 
 # dynamic models
-sigma_a_CV = 6
-sigma_a_CT = 6
-sigma_omega = 0.2 #* np.pi
+sigma_a_CV = 4
+sigma_a_CT = 4
+sigma_omega = 0.1#* np.pi
 
 mean_init = Xgt[0]
 mean_init = np.append(mean_init, 0.1)
-cov_init = np.diag([2*sigma_z, 2*sigma_z, 0.5, 0.5, 0.1])
+cov_init = np.diag([2*sigma_z, 2*sigma_z, 2, 2, 0.1])
 
 # make model
 measurement_model = measurementmodels.CartesianPosition(sigma_z, state_dim=5)
@@ -215,31 +215,39 @@ CI4 = np.array(scipy.stats.chi2.interval(confprob, 4))
 confprob = confprob
 CI2K = np.array(scipy.stats.chi2.interval(confprob, 2 * K)) / K
 CI4K = np.array(scipy.stats.chi2.interval(confprob, 4 * K)) / K
-ANEESpos = np.mean(NEESpos)
-ANEESvel = np.mean(NEESvel)
-ANEES = np.mean(NEES)
+ANEESpos = np.mean(NEESpos[0, :])
+ANEESvel = np.mean(NEESvel[0, :])
+ANEES = np.mean(NEES[0, :])
 
-print(f"ANEESpos = {ANEESpos:.2f} with CI = [{CI2K[0]:.2f}, {CI2K[1]:.2f}]")
-print(f"ANEESvel = {ANEESvel:.2f} with CI = [{CI2K[0]:.2f}, {CI2K[1]:.2f}]")
-print(f"ANEES = {ANEES:.2f} with CI = [{CI4K[0]:.2f}, {CI4K[1]:.2f}]")
+print(f"ANEESpos_CV = {ANEESpos:.2f} with CI = [{CI2K[0]:.2f}, {CI2K[1]:.2f}]")
+print(f"ANEESvel_CV = {ANEESvel:.2f} with CI = [{CI2K[0]:.2f}, {CI2K[1]:.2f}]")
+print(f"ANEES_CV = {ANEES:.2f} with CI = [{CI4K[0]:.2f}, {CI4K[1]:.2f}]")
+
+ANEESpos = np.mean(NEESpos[1, :])
+ANEESvel = np.mean(NEESvel[1, :])
+ANEES = np.mean(NEES[1, :])
+
+print(f"ANEESpos_CT = {ANEESpos:.2f} with CI = [{CI2K[0]:.2f}, {CI2K[1]:.2f}]")
+print(f"ANEESvel_CT = {ANEESvel:.2f} with CI = [{CI2K[0]:.2f}, {CI2K[1]:.2f}]")
+print(f"ANEES_CT = {ANEES:.2f} with CI = [{CI4K[0]:.2f}, {CI4K[1]:.2f}]")
 
 # %% plots
 # trajectory
 fig3, axs3 = plt.subplots(1, 2, num=2, clear=True)
 for i in range(posRMSE.shape[0]):
     if i == 0:
-        axs3[i].plot(*x_hat[0].T[:2], label=r"$\hat {x} CV$")
+        axs3[i].plot(*x_hat[0].T[:2], label=r"$\hat {x}_{CV}$")
     else:
-        axs3[i].plot(*x_hat[1].T[:2], label=r"$\hat {x} CT$")
+        axs3[i].plot(*x_hat[1].T[:2], label=r"$\hat {x}_{CT}$")
 
-    axs3[i].plot(*Xgt.T[:2], label=r"$X_{gt}$")
+    axs3[i].plot(*Xgt.T[:2], label=r"$x_{gt}$")
     axs3[i].legend()
     axs3[i].set_title(
          f"RMSE(pos, vel) = ({posRMSE[i]:.3f}, {velRMSE[i]:.3f})\npeak_dev(pos, vel) = ({peak_pos_deviation[i]:.3f}, {peak_vel_deviation[i]:.3f})"
     )
      
 
-plt.savefig(plot_save_path + "trajectories.eps", format="eps")
+#plt.savefig(plot_save_path + "trajectories.eps", format="eps")
 
 # NEES
 for i in range(NEESpos.shape[0]):
@@ -262,7 +270,7 @@ for i in range(NEESpos.shape[0]):
     inCI = np.mean((CI4[0] <= NEES[i,:]) * (NEES[i,:] <= CI4[1]))
     axs4[2].set_title(f"{inCI*100:.1f}% inside {confprob*100:.1f}% CI")
 
-    plt.savefig(plot_save_path + f"NEES_CI_{names[i]}.eps", format="eps")
+    ##plt.savefig(plot_save_path + f"NEES_CI_{names[i]}.eps", format="eps")
 
     plt.show()
 
@@ -276,6 +284,6 @@ for i,_ in enumerate(trackers):
     axs5[1].plot(np.arange(K) * T_mean, np.linalg.norm(x_hat[i][:, 2:4] - Xgt[:, 2:4], axis=1))
     axs5[1].set_ylabel("velocity error")
 
-    plt.savefig(plot_save_path + f"pos_vel_error.eps", format="eps")
+    #plt.savefig(plot_save_path + f"pos_vel_error.eps", format="eps")
 
     plt.show()

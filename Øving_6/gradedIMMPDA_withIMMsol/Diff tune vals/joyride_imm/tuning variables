@@ -1,0 +1,26 @@
+
+################################################################################################
+Nice NEES
+
+ANEESpos = 1.40 with CI = [1.77, 2.24]
+ANEESvel = 1.24 with CI = [1.77, 2.24]
+ANEES = 3.41 with CI = [3.68, 4.33]
+
+
+# sensor
+sigma_z = 25
+clutter_intensity = 1e-5
+PD = 0.9
+gate_size = 3
+
+# dynamic models
+sigma_a_CV = 1
+sigma_a_CT = 1
+sigma_omega = 0.1 #* np.pi
+
+# markov chain
+PI11 = 0.7
+
+PI22 = 0.7
+
+p10 = 0.95  # initvalue for mode probabilities
