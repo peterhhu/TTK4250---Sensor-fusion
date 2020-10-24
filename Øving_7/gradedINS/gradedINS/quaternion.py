@@ -77,7 +77,7 @@ def quaternion_to_rotation_matrix(
         )
 
     R = np.diag((3, 3))
-    R += eta*utils.cross_product_matrix(epsilon) + 2*utils.ross_product_matrix(epsilon)**2
+    R += 2*eta*utils.cross_product_matrix(epsilon) + 2*utils.ross_product_matrix(epsilon)**2
 
     if debug:
         assert np.allclose(
@@ -105,11 +105,14 @@ def quaternion_to_euler(quaternion: np.ndarray) -> np.ndarray:
     ), f"quaternion.quaternion_to_euler: Quaternion shape incorrect {quaternion.shape}"
 
     quaternion_squared = quaternion ** 2
+    eta = quaternion[0]
+    epsilon_1 = quaternion[1]
+    epsilon_2 = quaternion[2]
+    epsilon_3 = quaternion[3]
 
-    raise NotImplementedError  # TODO: remove when done
-    phi = 0  # TODO: Convert from quaternion to euler angles
-    theta = 0  # TODO: Convert from quaternion to euler angles
-    psi = 0  # TODO: Convert from quaternion to euler angles
+    phi = np.atan2(2*(epsilon_3*epsilon_2 + eta*epsilon_1), eta**2 - epsilon_1**2 - epsilon_2**2 + epsilon_3**2) 
+    theta = np.asin(2*(eta*epsilon_2 - epsilon_1*epsilon_3))
+    psi = np.atan2(2*(epsilon_1*epsilon_2 + eta*epsilon_3), eta**2 + epsilon_1**2 - epsilon_2**2 - epsilon_3**2)
 
     euler_angles = np.array([phi, theta, psi])
     assert euler_angles.shape == (
