@@ -282,7 +282,7 @@ class ESKF:
         LOWER_RIGHT_IDX = CatSlice(start = 15, stop = 30)
         
         V[UPPER_LEFT_IDX * UPPER_LEFT_IDX] = -A
-        V[UPPER_LEFT_IDX * LOWER_RIGHT_IDX] = G @ Q_err @ np.transose(G)
+        V[UPPER_LEFT_IDX * LOWER_RIGHT_IDX] = G @ self.Q_err @ np.transose(G)
         V[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX] = np.transpose(A)
         V = V*Ts
         
