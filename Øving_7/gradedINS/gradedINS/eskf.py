@@ -346,7 +346,7 @@ class ESKF:
 
         Ad, GQGd = self.discrete_error_matrices(x_nominal, acceleration, omega, Ts)
 
-        P_predicted = np.transpose(Ad)@GQGd
+        P_predicted = AD @ P @ np.transpose(Ad) + GQGd
 
         assert P_predicted.shape == (
             15,
