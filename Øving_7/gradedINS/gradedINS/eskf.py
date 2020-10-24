@@ -103,6 +103,10 @@ class ESKF:
         quaternion = x_nominal[ATT_IDX]
         acceleration_bias = x_nominal[ACC_BIAS_IDX]
         gyroscope_bias = x_nominal[GYRO_BIAS_IDX]
+        
+
+        
+        
 
         if self.debug:
             assert np.allclose(
@@ -112,24 +116,25 @@ class ESKF:
                 np.sum(quaternion ** 2), 1, rtol=0, atol=1e-15
             ), "ESKF.predict_nominal: Quaternion not normalized and norm failed to catch it."
 
-        R = quaternion_to_rotation_matrix(quaternion, debug=self.debug)
+        R = quaternion.quaternion_to_rotation_matrix(quaternion, debug=self.debug)
+        # Assumptions
+        a = R*(acceleration - acceleration_bias) + self.g
+        w = omega - gyroscope_bias
+        # Update predictions for new time steps using the hint
+        position_prediction = position + Ts*velocity + Ts**2*a/2
+        velocity_prediction = velocity + Ts*a
 
-        position_prediction = np.zeros((3,))  # TODO: Calculate predicted position
-        velocity_prediction = np.zeros((3,))  # TODO: Calculate predicted velocity
-
-        quaternion_prediction = np.array(
-            [1, 0, 0, 0]
-        )  # TODO: Calculate predicted quaternion
+        # Update quaternion using the hint
+        kappa = Ts*w
+        exponent = np.transpose(np.array([np.cos(np.norm(kappa,2)/2), np.sin(np.norm(kappa,2)/2), np.transpose(kappa)/np.norm(kappa,2)]))
+        quaternion_prediction = quaternion.quatenion_product(quaternion,exponent)
 
         # Normalize quaternion
-        quaternion_prediction = quaternion_prediction  # TODO: Normalize
+        quaternion_prediction = quaternion_prediction/np.linalg.norm(quaternion_prediction)
 
-        acceleration_bias_prediction = np.zeros(
-            (3,)
-        )  # TODO: Calculate predicted acceleration bias
-        gyroscope_bias_prediction = np.zeros(
-            (3,)
-        )  # TODO: Calculate predicted gyroscope bias
+        # Update biases
+        acceleration_bias_prediction = acceleration_bias - Ts*self.p_acc*acceleration_bias
+        gyroscope_bias_prediction = gyroscope_bias - Ts*self.gyro*gyroscope_bias
 
         x_nominal_predicted = np.concatenate(
             (
