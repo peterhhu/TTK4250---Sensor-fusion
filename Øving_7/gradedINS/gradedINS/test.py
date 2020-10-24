@@ -14,6 +14,11 @@ S = utils.cross_product_matrix(v)
 ql = np.array([3, 2, 0, 0])
 qr = np.array([1, 1, 0, 0])
 
-q_p = quaternion.quaternion_product(ql, qr)
+quat = quaternion.euler_to_quaternion(np.array([1,0,0]))
 
-print(q_p)
+q_p = quaternion.quaternion_product(ql, qr)
+print(quat)
+R = quaternion.quaternion_to_rotation_matrix(quat)
+
+
+print(R)
