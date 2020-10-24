@@ -126,7 +126,7 @@ class ESKF:
 
         # Update quaternion using the hint
         kappa = Ts*w
-        exponent = np.transpose(np.array([np.cos(np.norm(kappa,2)/2), np.sin(np.norm(kappa,2)/2), np.transpose(kappa)/np.norm(kappa,2)]))
+        exponent = np.transpose(np.array([np.cos(np.norm(kappa,2)/2), np.sin(np.norm(kappa,2)/2)*np.transpose(kappa)/np.norm(kappa,2)]))
         quaternion_prediction = quaternion.quatenion_product(quaternion,exponent)
 
         # Normalize quaternion
