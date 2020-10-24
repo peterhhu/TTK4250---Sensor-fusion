@@ -34,9 +34,37 @@ p10 = 0.8
 p11 = 0.1
 p12 = 0.1
 
-PI = np.array([[PI11, PI12, PI13], [PI21, PI22, PI23], [PI31, PI32, PI33]])
-assert np.allclose(np.sum(PI, axis=1), 1), "rows of PI must sum to 1"
 
-mean_init = Xgt[0]
-mean_init = np.append(mean_init, 0.1)
-cov_init = np.diag([2*sigma_z, 2*sigma_z, 2, 2, 0.1])
+
+###########################################
+
+
+# sensor
+sigma_z = 25
+clutter_intensity = 1e-5
+PD = 0.9
+gate_size = 5
+
+# dynamic models
+sigma_a_CV = 0.1
+sigma_a_CT = 0.1
+sigma_a_CV_high = 10
+sigma_omega = 0.01 #* np.pi
+
+# markov chain
+PI11 = 0.8  # CV -> CV
+PI12 = 0.1 # CV -> CT
+PI13 = 0.1 # CV -> CV_high
+
+PI21 = 0.1  # CT -> CV
+PI22 = 0.9  # CT -> CT
+PI23 = 0.0  # CT -> CV_high
+
+PI31 = 0.1  # CV_high -> CV
+PI32 = 0.0  # CV_high -> CT
+PI33 = 0.9  # CV_high -> CV_high
+
+
+p10 = 0.8 
+p11 = 0.1
+p12 = 0.1
