@@ -276,14 +276,24 @@ class ESKF:
         G = self.Gerr(x_nominal)
 
         V = np.zeros((30, 30))
+        
+        
+        UPPER_LEFT_IDX = CatSlice(start = 0, stop = 15)
+        LOWER_RIGHT_IDX = CatSlice(start = 15, stop = 30)
+        
+        V[UPPER_LEFT_IDX * UPPER_LEFT_IDX] = -A
+        V[UPPER_LEFT_IDX * LOWER_RIGHT_IDX] = G*Q_err*np.transose(G)
+        V[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX] = np.transpose(A)
+        V = V*Ts
+        
         assert V.shape == (
             30,
             30,
         ), f"ESKF.discrete_error_matrices: Van Loan matrix shape incorrect {omega.shape}"
         VanLoanMatrix = la.expm(V)  # This can be slow...
 
-        Ad = np.zeros((15, 15))
-        GQGd = np.zeros((15, 15))
+        Ad = V[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX]
+        GQGd = V[UPPER_LEFT_IDX * LOWER_RIGHT_IDX]
 
         assert Ad.shape == (
             15,
