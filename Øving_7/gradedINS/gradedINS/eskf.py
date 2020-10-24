@@ -282,7 +282,7 @@ class ESKF:
         LOWER_RIGHT_IDX = CatSlice(start = 15, stop = 30)
         
         V[UPPER_LEFT_IDX * UPPER_LEFT_IDX] = -A
-        V[UPPER_LEFT_IDX * LOWER_RIGHT_IDX] = G*Q_err*np.transose(G)
+        V[UPPER_LEFT_IDX * LOWER_RIGHT_IDX] = G @ Q_err @ np.transose(G)
         V[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX] = np.transpose(A)
         V = V*Ts
         
@@ -346,7 +346,7 @@ class ESKF:
 
         Ad, GQGd = self.discrete_error_matrices(x_nominal, acceleration, omega, Ts)
 
-        P_predicted = np.zeros((15, 15))
+        P_predicted = np.transpose(Ad)@GQGd
 
         assert P_predicted.shape == (
             15,
