@@ -230,6 +230,10 @@ class ESKF:
         R = quaternion_to_rotation_matrix(x_nominal[ATT_IDX], debug=self.debug)
 
         G = np.zeros((15, 12))
+        G[VEL_IDX * POS_IDX] = -R
+        G[ERR_ATT_IDX * VEL_IDX] = -np.eye(3)
+        G[ERR_ACC_BIAS_IDX * ERR_ATT_IDX] = np.eye(3)
+        G[ERR_GYRO_BIAS_IDX * ERR_ACC_BIAS_IDX] = np.eye(3)
 
         assert G.shape == (15, 12), f"ESKF.Gerr: G-matrix shape incorrect {G.shape}"
         return G
