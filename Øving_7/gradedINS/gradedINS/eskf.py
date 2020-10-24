@@ -126,7 +126,7 @@ class ESKF:
 
         # Update quaternion using the hint
         kappa = Ts*w
-        exponent = np.transpose(np.array([np.cos(np.norm(kappa,2)/2), np.sin(np.norm(kappa,2)/2)*np.transpose(kappa)/np.norm(kappa,2)]))
+        exponent = np.transpose(np.ndarray([np.cos(np.norm(kappa,2)/2), np.sin(np.norm(kappa,2)/2)*np.transpose(kappa)/np.norm(kappa,2)]))
         quaternion_prediction = quaternion.quatenion_product(quaternion,exponent)
 
         # Normalize quaternion
@@ -134,7 +134,7 @@ class ESKF:
 
         # Update biases
         acceleration_bias_prediction = acceleration_bias - Ts*self.p_acc*acceleration_bias
-        gyroscope_bias_prediction = gyroscope_bias - Ts*self.gyro*gyroscope_bias
+        gyroscope_bias_prediction = gyroscope_bias - Ts*self.p_gyro*gyroscope_bias
 
         x_nominal_predicted = np.concatenate(
             (
@@ -178,18 +178,25 @@ class ESKF:
 
         # Rotation matrix
         R = quaternion_to_rotation_matrix(x_nominal[ATT_IDX], debug=self.debug)
-
+        
+        # Extract states (copied from predict_nominal function)
+        position = x_nominal[POS_IDX]
+        velocity = x_nominal[VEL_IDX]
+        quaternion = x_nominal[ATT_IDX]
+        acceleration_bias = x_nominal[ACC_BIAS_IDX]
+        gyroscope_bias = x_nominal[GYRO_BIAS_IDX]
+        
         # Allocate the matrix
         A = np.zeros((15, 15))
 
         # Set submatrices
-        A[POS_IDX * VEL_IDX] = np.zeros((3,))
-        A[VEL_IDX * ERR_ATT_IDX] = np.zeros((3,))
-        A[VEL_IDX * ERR_ACC_BIAS_IDX] = np.zeros((3,))
-        A[ERR_ATT_IDX * ERR_ATT_IDX] = np.zeros((3,))
-        A[ERR_ATT_IDX * ERR_GYRO_BIAS_IDX] = np.zeros((3,))
-        A[ERR_ACC_BIAS_IDX * ERR_ACC_BIAS_IDX] = np.zeros((3,))
-        A[ERR_GYRO_BIAS_IDX * ERR_GYRO_BIAS_IDX] = np.zeros((3,))
+        A[POS_IDX * VEL_IDX] = np.eye(3)
+        A[VEL_IDX * ERR_ATT_IDX] = -R*quaternion.cross_product_matrix(acceleration - acceleration_bias)
+        A[VEL_IDX * ERR_ACC_BIAS_IDX] = -R
+        A[ERR_ATT_IDX * ERR_ATT_IDX] = -quaternion.cross_product_matrix(omega - gyroscope_bias)
+        A[ERR_ATT_IDX * ERR_GYRO_BIAS_IDX] = -np.eye(3)
+        A[ERR_ACC_BIAS_IDX * ERR_ACC_BIAS_IDX] = -self.p_acc*np.eye(3)
+        A[ERR_GYRO_BIAS_IDX * ERR_GYRO_BIAS_IDX] = -self.p_gyro*np.eye(3)
 
         # Bias correction
         A[VEL_IDX * ERR_ACC_BIAS_IDX] = A[VEL_IDX * ERR_ACC_BIAS_IDX] @ self.S_a
