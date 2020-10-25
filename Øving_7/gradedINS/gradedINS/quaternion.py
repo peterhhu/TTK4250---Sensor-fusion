@@ -76,7 +76,7 @@ def quaternion_to_rotation_matrix(
             f"quaternion.quaternion_to_rotation_matrix: Quaternion to multiplication error, quaternion shape incorrect: {quaternion.shape}"
         )
 
-    R = np.eye(3) + 2*eta*utils.cross_product_matrix(epsilon) + 2*utils.cross_product_matrix(epsilon)**2
+    R = np.eye(3) + 2*eta*utils.cross_product_matrix(epsilon) + 2*utils.cross_product_matrix(epsilon) @ utils.cross_product_matrix(epsilon)
 
     if debug:
         assert np.allclose(
@@ -109,9 +109,9 @@ def quaternion_to_euler(quaternion: np.ndarray) -> np.ndarray:
     epsilon_2 = quaternion[2]
     epsilon_3 = quaternion[3]
 
-    phi = np.atan2(2*(epsilon_3*epsilon_2 + eta*epsilon_1), eta**2 - epsilon_1**2 - epsilon_2**2 + epsilon_3**2) 
-    theta = np.asin(2*(eta*epsilon_2 - epsilon_1*epsilon_3))
-    psi = np.atan2(2*(epsilon_1*epsilon_2 + eta*epsilon_3), eta**2 + epsilon_1**2 - epsilon_2**2 - epsilon_3**2)
+    phi = np.arctan2(2*(epsilon_3*epsilon_2 + eta*epsilon_1), eta**2 - epsilon_1**2 - epsilon_2**2 + epsilon_3**2) 
+    theta = np.arcsin(2*(eta*epsilon_2 - epsilon_1*epsilon_3))
+    psi = np.arctan2(2*(epsilon_1*epsilon_2 + eta*epsilon_3), eta**2 + epsilon_1**2 - epsilon_2**2 - epsilon_3**2)
 
     euler_angles = np.array([phi, theta, psi])
     assert euler_angles.shape == (
@@ -153,3 +153,21 @@ def euler_to_quaternion(euler_angles: np.ndarray) -> np.ndarray:
     ), f"quaternion.euler_to_quaternion: Quaternion shape incorrect {quaternion.shape}"
 
     return quaternion
+
+def quaternion_conjugate(quaternion: np.ndarray) -> np.ndarray:
+    """Calculate quaternion conjugate
+
+    Args:
+        quaternion (np.ndarray): quaternion of shape (4,)
+
+    Returns:
+        np.ndarray: Quaternion of shape (4,)
+    """
+
+    quaternion_conj = -quaternion.reshape(4)*np.array([-1, 1, 1, 1])
+
+    assert quaternion_conj.shape == (
+        4,
+    ), f"quaternion.euler_to_quaternion: Quaternion shape incorrect {quaternion.shape}"
+
+    return quaternion_conj
