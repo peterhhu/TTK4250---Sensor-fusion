@@ -509,7 +509,7 @@ class ESKF:
             3,
         ), f"ESKF.innovation_GNSS: lever_arm shape incorrect {lever_arm.shape}"
 
-        H =  la.block_diag(np.eye(3), np.zeros(3,13))# TODO: measurement matrix
+        H =  np.block(np.eye(3), np.zeros(3,13))# TODO: measurement matrix
 
         v = z_GNSS_position - H@x_nominal  # TODO: innovation
 
@@ -572,7 +572,7 @@ class ESKF:
             x_nominal, P, z_GNSS_position, R_GNSS, lever_arm
         )
 
-        H = np.zeros((1,))  # TODO: measurement matrix
+        H = np.block(np.eye(3), np.zeros(3,13)) # TODO: measurement matrix
 
         # in case of a specified lever arm
         if not np.allclose(lever_arm, 0):
@@ -580,12 +580,12 @@ class ESKF:
             H[:, ERR_ATT_IDX] = -R @ cross_product_matrix(lever_arm, debug=self.debug)
 
         # KF error state update
-        W = np.zeros((1,))  # TODO: Kalman gain
-        delta_x = np.zeros((15,))  # TODO: delta x
+        W = P@H.T@la.inv(S)  # TODO: Kalman gain
+        delta_x = W@innovation # TODO: delta x
 
         Jo = I - W @ H  # for Joseph form
 
-        P_update = np.zeros((15, 15))  # TODO: P update
+        P_update = Jo@P  # TODO: P update
 
         # error state injection
         x_injected, P_injected = self.inject(x_nominal, delta_x, P_update)
