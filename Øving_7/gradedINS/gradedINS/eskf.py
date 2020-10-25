@@ -509,9 +509,9 @@ class ESKF:
             3,
         ), f"ESKF.innovation_GNSS: lever_arm shape incorrect {lever_arm.shape}"
 
-        H = np.zeros((1,))  # TODO: measurement matrix
+        H =  la.block_diag(np.eye(3), np.zeros(3,13))# TODO: measurement matrix
 
-        v = np.zeros((3,))  # TODO: innovation
+        v = z_GNSS_position - H@x_nominal  # TODO: innovation
 
         # leverarm compensation
         if not np.allclose(lever_arm, 0):
@@ -519,7 +519,7 @@ class ESKF:
             H[:, ERR_ATT_IDX] = -R @ cross_product_matrix(lever_arm, debug=self.debug)
             v -= R @ lever_arm
 
-        S = np.zeros((3, 3))  # TODO: innovation covariance
+        S = H@P@H.T + R_GNSS  # TODO: innovation covariance
 
         assert v.shape == (3,), f"ESKF.innovation_GNSS: v shape incorrect {v.shape}"
         assert S.shape == (3, 3), f"ESKF.innovation_GNSS: S shape incorrect {S.shape}"
