@@ -210,7 +210,7 @@ for k in tqdm(range(N)):
         NEES_att[k],
         NEES_accbias[k],
         NEES_gyrobias[k],
-    ) = eskf.NEESes(x_est[k], P_pred[0], x_true[k])# TODO: The true error state at step k
+    ) = eskf.NEESes(x_est[k], P_est[k], x_true[k])# TODO: The true error state at step k
 
     if k < N - 1:
         x_pred[k + 1], P_pred[k + 1] = eskf.predict(x_est[k], P_est[k], z_acceleration[k], z_gyroscope[k], dt)# TODO: Hint: measurements come from the the present and past, not the future
@@ -426,6 +426,6 @@ axs6[2].legend(['NEES pos', 'NEES vel', 'NEES att', 'NEES accbias', 'NEES gyrobi
 plt.grid()
 
 
-#plt.show()
+plt.show()
 
 # %%

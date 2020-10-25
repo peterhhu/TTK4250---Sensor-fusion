@@ -38,8 +38,8 @@ def quaternion_product(ql: np.ndarray, qr: np.ndarray) -> np.ndarray:
 
     quaternion = np.zeros((4,))
 
-    quaternion[0] = eta_left*q_right[0] -epsilon_left.T@q_right[1:4]
-    quaternion[1:4] = (q_right[0] * epsilon_left).reshape(3) + eta_left*q_right[1:4] + utils.cross_product_matrix(epsilon_left)@q_right[1:4]
+    quaternion[0] = eta_left * q_right[0] - epsilon_left.T @ q_right[1:4]
+    quaternion[1:4] = (q_right[0] * epsilon_left).reshape(3) + eta_left * q_right[1:4] + utils.cross_product_matrix(epsilon_left) @ q_right[1:4]
 
     # Ensure result is of correct shape
     quaternion = quaternion.ravel()
@@ -76,7 +76,7 @@ def quaternion_to_rotation_matrix(
             f"quaternion.quaternion_to_rotation_matrix: Quaternion to multiplication error, quaternion shape incorrect: {quaternion.shape}"
         )
 
-    R = np.eye(3) + 2*eta*utils.cross_product_matrix(epsilon) + 2*utils.cross_product_matrix(epsilon) @ utils.cross_product_matrix(epsilon)
+    R = np.eye(3) + 2 * eta * utils.cross_product_matrix(epsilon) + 2 * utils.cross_product_matrix(epsilon) @ utils.cross_product_matrix(epsilon)
 
     if debug:
         assert np.allclose(
@@ -109,9 +109,9 @@ def quaternion_to_euler(quaternion: np.ndarray) -> np.ndarray:
     epsilon_2 = quaternion[2]
     epsilon_3 = quaternion[3]
 
-    phi = np.arctan2(2*(epsilon_3*epsilon_2 + eta*epsilon_1), eta**2 - epsilon_1**2 - epsilon_2**2 + epsilon_3**2) 
-    theta = np.arcsin(2*(eta*epsilon_2 - epsilon_1*epsilon_3))
-    psi = np.arctan2(2*(epsilon_1*epsilon_2 + eta*epsilon_3), eta**2 + epsilon_1**2 - epsilon_2**2 - epsilon_3**2)
+    phi = np.arctan2(2 * (epsilon_3*epsilon_2 + eta*epsilon_1), eta ** 2 - epsilon_1 ** 2 - epsilon_2 ** 2 + epsilon_3 ** 2) 
+    theta = np.arcsin(2 * (eta*epsilon_2 - epsilon_1*epsilon_3))
+    psi = np.arctan2(2 * (epsilon_1*epsilon_2 + eta*epsilon_3), eta ** 2 + epsilon_1 ** 2 - epsilon_2 ** 2 - epsilon_3 ** 2)
 
     euler_angles = np.array([phi, theta, psi])
     assert euler_angles.shape == (
@@ -164,7 +164,7 @@ def quaternion_conjugate(quaternion: np.ndarray) -> np.ndarray:
         np.ndarray: Quaternion of shape (4,)
     """
 
-    quaternion_conj = -quaternion.reshape(4)*np.array([-1, 1, 1, 1])
+    quaternion_conj = -quaternion.reshape(4) * np.array([-1, 1, 1, 1])
 
     assert quaternion_conj.shape == (
         4,

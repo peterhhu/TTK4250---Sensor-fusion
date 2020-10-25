@@ -118,21 +118,21 @@ class ESKF:
         a = R @ (acceleration - acceleration_bias) + self.g
         w = omega - gyroscope_bias
         # Update predictions for new time steps using the hint
-        position_prediction = position + Ts*velocity + Ts**2*a/2
-        velocity_prediction = velocity + Ts*a
+        position_prediction = position + Ts * velocity + Ts ** 2 * a/2
+        velocity_prediction = velocity + Ts * a
 
         # Update quaternion using the hint
-        kappa = Ts*w
+        kappa = Ts * w
         exponent = np.array(np.cos(np.linalg.norm(kappa)/2))
-        exponent = np.append(exponent, np.sin(np.linalg.norm(kappa)/2)*(kappa.T)/np.linalg.norm(kappa))
+        exponent = np.append(exponent, np.sin(np.linalg.norm(kappa)/2) * (kappa.T) / np.linalg.norm(kappa))
         quaternion_prediction = quaternion_product(quaternion,exponent.T)
 
         # Normalize quaternion
-        quaternion_prediction = quaternion_prediction/np.linalg.norm(quaternion_prediction)
+        quaternion_prediction = quaternion_prediction / np.linalg.norm(quaternion_prediction)
 
         # Update biases
-        acceleration_bias_prediction = acceleration_bias - Ts*self.p_acc*acceleration_bias
-        gyroscope_bias_prediction = gyroscope_bias - Ts*self.p_gyro*gyroscope_bias
+        acceleration_bias_prediction = acceleration_bias - Ts * self.p_acc * acceleration_bias
+        gyroscope_bias_prediction = gyroscope_bias - Ts * self.p_gyro * gyroscope_bias
 
         x_nominal_predicted = np.concatenate(
             (
@@ -195,8 +195,8 @@ class ESKF:
         A[VEL_IDX * ERR_ACC_BIAS_IDX] = -R
         A[ERR_ATT_IDX * ERR_ATT_IDX] = -cross_product_matrix(omega - gyroscope_bias)
         A[ERR_ATT_IDX * ERR_GYRO_BIAS_IDX] = -np.eye(3)
-        A[ERR_ACC_BIAS_IDX * ERR_ACC_BIAS_IDX] = -self.p_acc*np.eye(3)
-        A[ERR_GYRO_BIAS_IDX * ERR_GYRO_BIAS_IDX] = -self.p_gyro*np.eye(3)
+        A[ERR_ACC_BIAS_IDX * ERR_ACC_BIAS_IDX] = -self.p_acc * np.eye(3)
+        A[ERR_GYRO_BIAS_IDX * ERR_GYRO_BIAS_IDX] = -self.p_gyro * np.eye(3)
 
         # Bias correction
         A[VEL_IDX * ERR_ACC_BIAS_IDX] = A[VEL_IDX * ERR_ACC_BIAS_IDX] @ self.S_a
@@ -284,7 +284,7 @@ class ESKF:
         V[UPPER_LEFT_IDX * UPPER_LEFT_IDX] = -A
         V[UPPER_LEFT_IDX * LOWER_RIGHT_IDX] = G @ self.Q_err @ G.T
         V[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX] = A.T
-        V = V*Ts
+        V = V * Ts
         
         assert V.shape == (
             30,
@@ -292,8 +292,8 @@ class ESKF:
         ), f"ESKF.discrete_error_matrices: Van Loan matrix shape incorrect {omega.shape}"
         VanLoanMatrix = la.expm(V)  # This can be slow...
 
-        Ad = V[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX]
-        GQGd = V[UPPER_LEFT_IDX * LOWER_RIGHT_IDX]
+        Ad = VanLoanMatrix[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX]
+        GQGd = VanLoanMatrix[UPPER_LEFT_IDX * LOWER_RIGHT_IDX]
 
         assert Ad.shape == (
             15,
@@ -449,12 +449,13 @@ class ESKF:
         DTX_IDX = POS_IDX + VEL_IDX + ERR_ACC_BIAS_IDX + ERR_GYRO_BIAS_IDX
 
         x_injected = x_nominal.copy()
-        x_injected[INJ_IDX] = x_injected[INJ_IDX] + delta_x[DTX_IDX]# TODO: Inject error state into nominal state (except attitude / quaternion)
-        x_injected[ATT_IDX] = quaternion_product(x_injected[ATT_IDX], delta_x[ATT_IDX])# TODO: Inject attitude
-        x_injected[ATT_IDX] = x_injected[ATT_IDX]/np.linalg.norm(x_injected[ATT_IDX])# TODO: Normalize quaternion
+        x_injected[INJ_IDX] = x_injected[INJ_IDX] + delta_x[DTX_IDX] # TODO: Inject error state into nominal state (except attitude / quaternion)
+        x_injected[ATT_IDX] = quaternion_product(x_injected[ATT_IDX], delta_x[ATT_IDX]) # TODO: Inject attitude
+        x_injected[ATT_IDX] = x_injected[ATT_IDX]/np.linalg.norm(x_injected[ATT_IDX]) # TODO: Normalize quaternion
 
         quaternion_conj = quaternion_conjugate(x_nominal[ATT_IDX]) # Calculate the conjugate of the nominal quaternion
-        delta_theta = quaternion_conj[1:]
+        delta_quaternion = quaternion_product(quaternion_conj, x_nominal[ATT_IDX])
+        delta_theta =  2 * delta_quaternion[1:]
 
         # Covariance
         G_injected = la.block_diag(np.eye(6), np.eye(3) - cross_product_matrix(delta_theta)/2, np.eye(6))  # TODO: Compensate for injection in the covariances
@@ -588,7 +589,7 @@ class ESKF:
 
         Jo = I - W @ H  # for Joseph form
 
-        P_update = Jo @ P  # TODO: P update
+        P_update = Jo @ P # TODO: P update
 
         # error state injection
         x_injected, P_injected = self.inject(x_nominal, delta_x, P_update)
@@ -647,7 +648,7 @@ class ESKF:
             x_nominal, P, z_GNSS_position, R_GNSS, lever_arm
         )
 
-        NIS = v.T@la.inv(S)@v  # TODO: Calculate NIS
+        NIS = v.T @ la.inv(S) @ v  # TODO: Calculate NIS
 
         assert NIS >= 0, "EKSF.NIS_GNSS_positionNIS: NIS not positive"
 
@@ -681,7 +682,7 @@ class ESKF:
         quaternion_conj = quaternion_conjugate(x_nominal[ATT_IDX])  # TODO: Conjugate of quaternion
 
         delta_quaternion = quaternion_product(quaternion_conj, x_true[ATT_IDX])  # TODO: Error quaternion
-        delta_theta = 2*delta_quaternion[1:]
+        delta_theta = 2 * delta_quaternion[1:]
 
         # Concatenation of bias indices
         BIAS_IDX = ACC_BIAS_IDX + GYRO_BIAS_IDX
