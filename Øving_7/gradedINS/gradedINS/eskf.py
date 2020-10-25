@@ -718,12 +718,12 @@ class ESKF:
 
         d_x = cls.delta_x(x_nominal, x_true)
 
-        NEES_all = 0  # TODO: NEES all
-        NEES_pos = 0  # TODO: NEES position
-        NEES_vel = 0  # TODO: NEES velocity
-        NEES_att = 0  # TODO: NEES attitude
-        NEES_accbias = 0  # TODO: NEES accelerometer bias
-        NEES_gyrobias = 0  # TODO: NEES gyroscope bias
+        NEES_all = cls._NEES(d_x, P)  # TODO: NEES all
+        NEES_pos = cls._NEES(d_x[POS_IDX], P[POS_IDX, POS_IDX])  # TODO: NEES position
+        NEES_vel = cls._NEES(d_x[VEL_IDX], P[VEL_IDX, VEL_IDX])  # TODO: NEES velocity
+        NEES_att = cls._NEES(d_x[ATT_IDX], P[ATT_IDX, ATT_IDX])  # TODO: NEES attitude
+        NEES_accbias = cls._NEES(d_x[ACC_BIAS_IDX], P[ACC_BIAS_IDX, ACC_BIAS_IDX])  # TODO: NEES accelerometer bias
+        NEES_gyrobias = cls._NEES(d_x[GYRO_BIAS_IDX], P[GYRO_BIAS_IDX, GYRO_BIAS_IDX])  # TODO: NEES gyroscope bias
 
         NEESes = np.array(
             [NEES_all, NEES_pos, NEES_vel, NEES_att, NEES_accbias, NEES_gyrobias]
@@ -733,7 +733,7 @@ class ESKF:
 
     @classmethod
     def _NEES(cls, diff, P):
-        NEES = 0  # TODO: NEES
+        NEES = diff.T@la.inv(P)@diff  # TODO: NEES
         assert NEES >= 0, "ESKF._NEES: negative NEES"
         return NEES
 
