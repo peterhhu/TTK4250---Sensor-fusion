@@ -178,6 +178,7 @@ P_pred[0][ERR_ATT_IDX ** 2] = np.eye(3)# TODO # error rotation vector (not quat)
 P_pred[0][ERR_ACC_BIAS_IDX ** 2] = np.eye(3)# TODO
 P_pred[0][ERR_GYRO_BIAS_IDX ** 2] = np.eye(3)# TODO
 
+
 # %% Test: you can run this cell to test your implementation
 dummy = eskf.predict(x_pred[0], P_pred[0], z_acceleration[0], z_gyroscope[0], dt)
 dummy = eskf.update_GNSS_position(x_pred[0], P_pred[0], z_GNSS[0], R_GNSS, lever_arm)
@@ -224,11 +225,12 @@ for k in tqdm(range(N)):
 fig1 = plt.figure(1)
 ax = plt.axes(projection="3d")
 
-ax.plot3D(x_est[:N, 1], x_est[:N, 0], -x_est[:N, 2])
-ax.plot3D(z_GNSS[:GNSSk, 1], z_GNSS[:GNSSk, 0], -z_GNSS[:GNSSk, 2])
+ax.plot3D(x_est[:N, 1], x_est[:N, 0], -x_est[:N, 2], label="est")
+ax.plot3D(z_GNSS[:GNSSk, 1], z_GNSS[:GNSSk, 0], -z_GNSS[:GNSSk, 2], label="GNSS")
 ax.set_xlabel("East [m]")
 ax.set_ylabel("North [m]")
 ax.set_zlabel("Altitude [m]")
+ax.legend()
 
 
 # state estimation
@@ -267,7 +269,7 @@ fig2.suptitle("States estimates")
 
 # state error plots
 fig3, axs3 = plt.subplots(5, 1, num=3, clear=True)
-delta_x_RMSE = np.sqrt(np.mean(delta_x[:N] ** 2, axis=1))  # TODO use this in legends
+delta_x_RMSE = np.sqrt(np.mean(delta_x[:N] ** 2, axis=0))  # TODO use this in legends
 axs3[0].plot(t, delta_x[:N, POS_IDX])
 axs3[0].set(ylabel="NED position error [m]")
 axs3[0].legend(

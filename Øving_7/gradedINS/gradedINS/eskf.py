@@ -115,8 +115,8 @@ class ESKF:
 
         R = quaternion_to_rotation_matrix(quaternion, debug=self.debug)
         # Assumptions
-        a = R @ (acceleration - acceleration_bias) + self.g
-        w = omega - gyroscope_bias
+        a = R @ acceleration + self.g
+        w = omega
         # Update predictions for new time steps using the hint
         position_prediction = position + Ts * velocity + Ts ** 2 * a/2
         velocity_prediction = velocity + Ts * a
@@ -179,21 +179,14 @@ class ESKF:
         # Rotation matrix
         R = quaternion_to_rotation_matrix(x_nominal[ATT_IDX], debug=self.debug)
         
-        # Extract states (copied from predict_nominal function)
-        position = x_nominal[POS_IDX]
-        velocity = x_nominal[VEL_IDX]
-        quaternion = x_nominal[ATT_IDX]
-        acceleration_bias = x_nominal[ACC_BIAS_IDX]
-        gyroscope_bias = x_nominal[GYRO_BIAS_IDX]
-        
         # Allocate the matrix
         A = np.zeros((15, 15))
 
         # Set submatrices
         A[POS_IDX * VEL_IDX] = np.eye(3)
-        A[VEL_IDX * ERR_ATT_IDX] = -R @ cross_product_matrix(acceleration - acceleration_bias)
+        A[VEL_IDX * ERR_ATT_IDX] = -R @ cross_product_matrix(acceleration)
         A[VEL_IDX * ERR_ACC_BIAS_IDX] = -R
-        A[ERR_ATT_IDX * ERR_ATT_IDX] = -cross_product_matrix(omega - gyroscope_bias)
+        A[ERR_ATT_IDX * ERR_ATT_IDX] = -cross_product_matrix(omega)
         A[ERR_ATT_IDX * ERR_GYRO_BIAS_IDX] = -np.eye(3)
         A[ERR_ACC_BIAS_IDX * ERR_ACC_BIAS_IDX] = -self.p_acc * np.eye(3)
         A[ERR_GYRO_BIAS_IDX * ERR_GYRO_BIAS_IDX] = -self.p_gyro * np.eye(3)
@@ -346,7 +339,7 @@ class ESKF:
 
         Ad, GQGd = self.discrete_error_matrices(x_nominal, acceleration, omega, Ts)
 
-        P_predicted = Ad @ P @ np.transpose(Ad) + GQGd
+        P_predicted = Ad @ P @ Ad.T + Ad.T @ GQGd
 
         assert P_predicted.shape == (
             15,
@@ -591,7 +584,7 @@ class ESKF:
 
         Jo = I - W @ H  # for Joseph form
 
-        P_update = Jo @ P # TODO: P update
+        P_update = Jo @ P # @ Jo.T + W @ R_GNSS @ W.T# TODO: P update
 
         # error state injection
         x_injected, P_injected = self.inject(x_nominal, delta_x, P_update)
