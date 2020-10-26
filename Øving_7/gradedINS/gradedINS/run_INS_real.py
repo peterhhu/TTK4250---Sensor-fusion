@@ -159,7 +159,7 @@ P_pred = np.zeros((steps, 15, 15))
 NIS = np.zeros(gnss_steps)
 
 # %% Initialise
-x_pred[0, POS_IDX] = np.array([0, 0, 0]) # starting 5 metres above ground
+x_pred[0, POS_IDX] = z_GNSS[0,:] # starting 5 metres above ground
 x_pred[0, VEL_IDX] = np.array([0, 0, 0]) # starting at 20 m/s due north
 x_pred[0, ATT_IDX] = np.array([
     np.cos(45 * np.pi / 180),
@@ -180,7 +180,7 @@ GNSSk = 0
 
 for k in tqdm(range(N)):
     if timeIMU[k] >= timeGNSS[GNSSk]:
-        R_GNSS = [0.1, 0.1, 1] # TODO: Current GNSS covariance
+        R_GNSS = np.diag([0.1, 0.1, 1]) # TODO: Current GNSS covariance
         NIS[GNSSk] = eskf.NIS_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)# TODO
 
         x_est[k], P_est[k] = eskf.update_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)# TODO
@@ -194,7 +194,7 @@ for k in tqdm(range(N)):
         P_est[k] = P_pred[k]# TODO
 
     if k < N - 1:
-        x_pred[k + 1], P_pred[k + 1] = eskf.predict(x_est[k], P_pred[k], z_acceleration[k + 1], z_gyroscope[k + 1], Ts_IMU)# TODO
+        x_pred[k + 1], P_pred[k + 1] = eskf.predict(x_est[k], P_pred[k], z_acceleration[k + 1], z_gyroscope[k + 1], Ts_IMU[k + 1])# TODO
 
     if eskf.debug:
         assert np.all(np.isfinite(P_pred[k])), f"Not finite P_pred at index {k + 1}"
@@ -205,11 +205,12 @@ for k in tqdm(range(N)):
 fig1 = plt.figure(1)
 ax = plt.axes(projection='3d')
 
-ax.plot3D(x_est[0:N, 1], x_est[0:N, 0], -x_est[0:N, 2])
-ax.plot3D(z_GNSS[0:N, 1], z_GNSS[0:N, 0], -z_GNSS[0:N, 2])
+ax.plot3D(x_est[0:N, 1], x_est[0:N, 0], -x_est[0:N, 2], label=r"$\hat{x}$")
+ax.plot3D(z_GNSS[0:N, 1], z_GNSS[0:N, 0], -z_GNSS[0:N, 2], label="GNSS")
 ax.set_xlabel('East [m]')
 ax.set_xlabel('North [m]')
 ax.set_xlabel('Altitude [m]')
+ax.legend()
 
 plt.grid()
 
@@ -266,4 +267,5 @@ plt.boxplot([NIS[0:GNSSk], gauss_compare], notch=True)
 plt.legend('NIS', 'gauss')
 plt.grid()
 
+plt.show()
 # %%
