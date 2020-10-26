@@ -75,8 +75,8 @@ def quaternion_to_rotation_matrix(
         raise RuntimeError(
             f"quaternion.quaternion_to_rotation_matrix: Quaternion to multiplication error, quaternion shape incorrect: {quaternion.shape}"
         )
-
-    R = np.eye(3) + 2 * eta * utils.cross_product_matrix(epsilon) + 2 * utils.cross_product_matrix(epsilon) @ utils.cross_product_matrix(epsilon)
+    S = utils.cross_product_matrix(epsilon) 
+    R = np.eye(3) + 2 * eta * S + 2 * S @ S
 
     if debug:
         assert np.allclose(

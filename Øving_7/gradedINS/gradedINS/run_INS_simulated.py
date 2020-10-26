@@ -292,7 +292,7 @@ axs3[1].legend(
 
 # quick wrap func
 wrap_to_pi = lambda rads: (rads + np.pi) % (2 * np.pi) - np.pi
-eul_error = wrap_to_pi(eul[:N] - eul_true[:N]) * 180 / np.pi
+eul_error = wrap_to_pi(eul[:N] - eul_true[:N])
 axs3[2].plot(t, eul_error)
 axs3[2].set(ylabel="Euler angles error [deg]")
 axs3[2].legend(

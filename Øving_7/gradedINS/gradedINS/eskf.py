@@ -123,16 +123,20 @@ class ESKF:
 
         # Update quaternion using the hint
         kappa = Ts * w
-        exponent = np.array(np.cos(np.linalg.norm(kappa)/2))
-        exponent = np.append(exponent, np.sin(np.linalg.norm(kappa)/2) * (kappa.T) / np.linalg.norm(kappa))
-        quaternion_prediction = quaternion_product(quaternion,exponent.T)
+        kappa_norm = np.linalg.norm(kappa)
+        exponent = np.array([np.cos(kappa_norm/2), *(np.sin(kappa_norm/2) * (kappa.T) / kappa_norm)]).T
+        quaternion_prediction = quaternion_product(quaternion, exponent)
 
         # Normalize quaternion
         quaternion_prediction = quaternion_prediction / np.linalg.norm(quaternion_prediction)
 
         # Update biases
-        acceleration_bias_prediction = acceleration_bias - Ts * self.p_acc * acceleration_bias
-        gyroscope_bias_prediction = gyroscope_bias - Ts * self.p_gyro * gyroscope_bias
+        # acceleration_bias_prediction = acceleration_bias - Ts * self.p_acc * acceleration_bias
+        # gyroscope_bias_prediction = gyroscope_bias - Ts * self.p_gyro * gyroscope_bias
+
+        acceleration_bias_prediction = acceleration_bias*np.exp(-self.p_acc*Ts) 
+        gyroscope_bias_prediction = gyroscope_bias*np.exp(-self.p_gyro*Ts)
+
 
         x_nominal_predicted = np.concatenate(
             (
