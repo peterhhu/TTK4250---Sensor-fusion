@@ -108,30 +108,32 @@ z_GNSS = loaded_data["zGNSS"].T
 z_gyroscope = loaded_data["zGyro"].T
 accuracy_GNSS = loaded_data['GNSSaccuracy'].ravel()
 
+Ts_IMU = [0, *np.diff(timeIMU)]
+
 dt = np.mean(np.diff(timeIMU))
 steps = len(z_acceleration)
 gnss_steps = len(z_GNSS)
 
 # %% Measurement noise
 # Continous noise
-cont_gyro_noise_std = # TODO
-cont_acc_noise_std = # TODO
+cont_gyro_noise_std = 4.36e-5  # (rad/s)/sqrt(Hz) # TODO
+cont_acc_noise_std = 1.167e-3  # (m/s**2)/sqrt(Hz) # TODO
 
 # Discrete sample noise at simulation rate used
 rate_std = cont_gyro_noise_std*np.sqrt(1/dt)
 acc_std  = cont_acc_noise_std*np.sqrt(1/dt)
 
 # Bias values
-rate_bias_driving_noise_std = # TODO
+rate_bias_driving_noise_std = 5e-5 # TODO
 cont_rate_bias_driving_noise_std = rate_bias_driving_noise_std/np.sqrt(1/dt)
 
-acc_bias_driving_noise_std = # TODO
+acc_bias_driving_noise_std = 4e-3 # TODO
 cont_acc_bias_driving_noise_std = acc_bias_driving_noise_std/np.sqrt(1/dt)
 
 # Position and velocity measurement
-p_acc = # TODO
+p_acc = 1e-16 # TODO
 
-p_gyro = # TODO
+p_gyro = 1e-16# TODO
 
 # %% Estimator
 eskf = ESKF(
@@ -173,26 +175,26 @@ P_pred[0][ERR_GYRO_BIAS_IDX**2] = (1e-3)**2 * np.eye(3)
 
 # %% Run estimation
 
-N = steps
+N = 500 #steps
 GNSSk = 0
 
 for k in tqdm(range(N)):
     if timeIMU[k] >= timeGNSS[GNSSk]:
-        R_GNSS = # TODO: Current GNSS covariance
-        NIS[GNSSk] = # TODO
+        R_GNSS = [0.1, 0.1, 1] # TODO: Current GNSS covariance
+        NIS[GNSSk] = eskf.NIS_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)# TODO
 
-        x_est[k], P_est[k] = # TODO
-        if eskf.debug
+        x_est[k], P_est[k] = eskf.update_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)# TODO
+        if eskf.debug:
             assert np.all(np.isfinite(P_est[k])), f"Not finite P_pred at index {k}"
 
         GNSSk += 1
     else:
         # no updates, so estimate = prediction
-        x_est[k] = # TODO
-        P_est[k] = # TODO
+        x_est[k] = x_pred[k] # TODO
+        P_est[k] = P_pred[k]# TODO
 
     if k < N - 1:
-        x_pred[k + 1], P_pred[k + 1] = # TODO
+        x_pred[k + 1], P_pred[k + 1] = eskf.predict(x_est[k], P_pred[k], z_acceleration[k + 1], z_gyroscope[k + 1], Ts_IMU)# TODO
 
     if eskf.debug:
         assert np.all(np.isfinite(P_pred[k])), f"Not finite P_pred at index {k + 1}"
