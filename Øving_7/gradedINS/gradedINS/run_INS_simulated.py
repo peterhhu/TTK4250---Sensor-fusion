@@ -225,8 +225,9 @@ for k in tqdm(range(N)):
 fig1 = plt.figure(1)
 ax = plt.axes(projection="3d")
 
-ax.plot3D(x_est[:N, 1], x_est[:N, 0], -x_est[:N, 2], label="est")
+ax.plot3D(x_est[:N, 1], x_est[:N, 0], -x_est[:N, 2], label=r"$\hat{x}$")
 ax.plot3D(z_GNSS[:GNSSk, 1], z_GNSS[:GNSSk, 0], -z_GNSS[:GNSSk, 2], label="GNSS")
+ax.plot3D(x_true[:N, 1], x_true[:N, 0], -x_true[:N, 2], label=r"$x_{gt}$")
 ax.set_xlabel("East [m]")
 ax.set_ylabel("North [m]")
 ax.set_zlabel("Altitude [m]")

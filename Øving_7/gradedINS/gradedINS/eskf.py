@@ -289,8 +289,11 @@ class ESKF:
         ), f"ESKF.discrete_error_matrices: Van Loan matrix shape incorrect {omega.shape}"
         VanLoanMatrix = la.expm(V)  # This can be slow...
 
-        Ad = VanLoanMatrix[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX]
-        GQGd = VanLoanMatrix[UPPER_LEFT_IDX * LOWER_RIGHT_IDX]
+        # Ad = VanLoanMatrix[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX] OUR CODE
+        # GQGd = VanLoanMatrix[UPPER_LEFT_IDX * LOWER_RIGHT_IDX]
+
+        Ad = VanLoanMatrix[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX].T
+        GQGd = Ad @ VanLoanMatrix[UPPER_LEFT_IDX * LOWER_RIGHT_IDX]
 
         assert Ad.shape == (
             15,
@@ -343,7 +346,9 @@ class ESKF:
 
         Ad, GQGd = self.discrete_error_matrices(x_nominal, acceleration, omega, Ts)
 
-        P_predicted = Ad @ P @ Ad.T + Ad.T @ GQGd
+        # P_predicted = Ad @ P @ Ad.T + Ad.T @ GQGd OUR CODE
+
+        P_predicted = Ad @ P @ Ad.T + GQGd
 
         assert P_predicted.shape == (
             15,
@@ -588,7 +593,8 @@ class ESKF:
 
         Jo = I - W @ H  # for Joseph form
 
-        P_update = Jo @ P # @ Jo.T + W @ R_GNSS @ W.T# TODO: P update
+        # P_update = Jo @ P OUR CODE
+        P_update = Jo @ P @ Jo.T + W @ R_GNSS @ W.T# TODO: P update
 
         # error state injection
         x_injected, P_injected = self.inject(x_nominal, delta_x, P_update)
