@@ -450,15 +450,17 @@ class ESKF:
 
         x_injected = x_nominal.copy()
         x_injected[INJ_IDX] = x_injected[INJ_IDX] + delta_x[DTX_IDX] # TODO: Inject error state into nominal state (except attitude / quaternion)
-        x_injected[ATT_IDX] = quaternion_product(x_injected[ATT_IDX], delta_x[ATT_IDX]) # TODO: Inject attitude
+
+        # quaternion_conj = quaternion_conjugate(x_nominal[ATT_IDX]) # Calculate the conjugate of the nominal quaternion
+        # delta_quaternion = quaternion_product(quaternion_conj, x_nominal[ATT_IDX])
+        # delta_theta =  2 * delta_quaternion[1:]
+
+        x_injected[ATT_IDX] = quaternion_product(x_injected[ATT_IDX], np.concatenate([np.array([1]), delta_x[ERR_ATT_IDX]/2])) # TODO: Inject attitude
         x_injected[ATT_IDX] = x_injected[ATT_IDX]/np.linalg.norm(x_injected[ATT_IDX]) # TODO: Normalize quaternion
 
-        quaternion_conj = quaternion_conjugate(x_nominal[ATT_IDX]) # Calculate the conjugate of the nominal quaternion
-        delta_quaternion = quaternion_product(quaternion_conj, x_nominal[ATT_IDX])
-        delta_theta =  2 * delta_quaternion[1:]
 
         # Covariance
-        G_injected = la.block_diag(np.eye(6), np.eye(3) - cross_product_matrix(delta_theta)/2, np.eye(6))  # TODO: Compensate for injection in the covariances
+        G_injected = la.block_diag(np.eye(6), np.eye(3) - cross_product_matrix(delta_x[ERR_ATT_IDX])/2, np.eye(6))  # TODO: Compensate for injection in the covariances
         P_injected = G_injected @ P @ G_injected.T # TODO
 
         assert x_injected.shape == (
