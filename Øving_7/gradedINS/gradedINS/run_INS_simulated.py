@@ -181,11 +181,13 @@ NEES_accbias = np.zeros(steps)
 NEES_gyrobias = np.zeros(steps)
 
 # %% Initialise
-x_pred[0, POS_IDX] = np.array([0, 0, -5])  # starting 5 metres above ground
+# x_pred[0, POS_IDX] = np.array([0, 0, -5])  # starting 5 metres above ground
+x_pred[0, POS_IDX] = x_true[0, POS_IDX]
 x_pred[0, VEL_IDX] = np.array([20, 0, 0])  # starting at 20 m/s due north
 x_pred[0, 6] = 1  # no initial rotation: nose to North, right to East, and belly down
 
 # These have to be set reasonably to get good results
+
 P_pred[0][POS_IDX ** 2] = 0.2 ** 2 * np.eye(3)# TODO
 P_pred[0][VEL_IDX ** 2] = 0.04 ** 2 * np.eye(3)# TODO
 P_pred[0][ERR_ATT_IDX ** 2] = 0.01 ** 2 * np.eye(3)# TODO # error rotation vector (not quat)
