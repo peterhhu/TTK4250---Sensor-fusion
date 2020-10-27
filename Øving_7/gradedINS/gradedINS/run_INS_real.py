@@ -124,7 +124,7 @@ rate_std = cont_gyro_noise_std*np.sqrt(1/dt)
 acc_std  = cont_acc_noise_std*np.sqrt(1/dt)
 
 # Bias values
-rate_bias_driving_noise_std = 5e-5 # TODO
+rate_bias_driving_noise_std = 5e-4 # TODO
 cont_rate_bias_driving_noise_std = rate_bias_driving_noise_std/np.sqrt(1/dt)
 
 acc_bias_driving_noise_std = 4e-3 # TODO
@@ -145,7 +145,7 @@ eskf = ESKF(
     p_gyro,
     S_a = S_a, # set the accelerometer correction matrix
     S_g = S_g, # set the gyro correction matrix,
-    debug=True # False to avoid expensive debug checks
+    debug=False # False to avoid expensive debug checks
 )
 
 
@@ -175,13 +175,13 @@ P_pred[0][ERR_GYRO_BIAS_IDX**2] = (1e-3)**2 * np.eye(3)
 
 # %% Run estimation
 
-N = 90000 #steps
+N = 100000 #steps
 GNSSk = 0
-taylor_approx_degree = 2
+taylor_approx_degree = 2 # The order of the taylor approximation to be done in discretizing the error-state matrices
 
 for k in tqdm(range(N)):
     if timeIMU[k] >= timeGNSS[GNSSk]:
-        R_GNSS = np.eye(3)*accuracy_GNSS[GNSSk] # TODO: Current GNSS covariance
+        R_GNSS = np.eye(3) * accuracy_GNSS[GNSSk] * z_GNSS[GNSSk] # TODO: Current GNSS covariance
         NIS[GNSSk] = eskf.NIS_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)# TODO
 
         x_est[k], P_est[k] = eskf.update_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)# TODO
@@ -256,7 +256,7 @@ fig3 = plt.figure()
 
 plt.plot(NIS[:GNSSk])
 plt.plot(np.array([0, N-1]) * dt, (CI3@np.ones((1, 2))).T)
-insideCI = np.mean((CI3[0] <= NIS) * (NIS <= CI3[1]))
+insideCI = np.mean((CI3[0] <= NIS[:GNSSk]) * (NIS[:GNSSk] <= CI3[1]))
 plt.title(f'NIS ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)')
 plt.grid()
 

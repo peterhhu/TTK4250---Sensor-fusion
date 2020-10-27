@@ -111,42 +111,28 @@ gnss_steps = len(z_GNSS)
 # IMU noise values for STIM300, based on datasheet and simulation sample rate
 # Continous noise
 # TODO: What to remove here?
-#cont_gyro_noise_std = 4.36e-5  # (rad/s)/sqrt(Hz)
-#cont_acc_noise_std = 1.167e-3  # (m/s**2)/sqrt(Hz)
 cont_gyro_noise_std = 4.36e-5  # (rad/s)/sqrt(Hz)
 cont_acc_noise_std = 1.167e-3  # (m/s**2)/sqrt(Hz)
 
 # Discrete sample noise at simulation rate used
-#rate_std = 0.5 * cont_gyro_noise_std * np.sqrt(1 / dt)
-#acc_std = 0.5 * cont_acc_noise_std * np.sqrt(1 / dt)
 rate_std = 0.5 * cont_gyro_noise_std * np.sqrt(1 / dt)
 acc_std = 0.5 * cont_acc_noise_std * np.sqrt(1 / dt)
 
 # Bias values
-#rate_bias_driving_noise_std = 5e-5
-#cont_rate_bias_driving_noise_std = (
-#    (1 / 3) * rate_bias_driving_noise_std / np.sqrt(1 / dt)
-#)
-rate_bias_driving_noise_std = 5e-5
+rate_bias_driving_noise_std = 5e-4
 cont_rate_bias_driving_noise_std = (
     (1 / 3) * rate_bias_driving_noise_std / np.sqrt(1 / dt)
 )
 
-#acc_bias_driving_noise_std = 4e-3
-#cont_acc_bias_driving_noise_std = 6 * acc_bias_driving_noise_std / np.sqrt(1 / dt)
 acc_bias_driving_noise_std = 4e-3
 cont_acc_bias_driving_noise_std = 6 * acc_bias_driving_noise_std / np.sqrt(1 / dt)
 
 # Position and velocity measurement
-#p_std = np.array([0.3, 0.3, 0.5])  # Measurement noise
-#R_GNSS = np.diag(p_std ** 2)
 p_std = np.array([0.3, 0.3, 0.5])  # Measurement noise
 R_GNSS = np.diag(p_std ** 2)
-
-#p_acc = 1e-16 
+ 
 p_acc = 1e-16
 
-#p_gyro = 1e-16
 p_gyro = 1e-16
 
 # %% Estimator
@@ -159,7 +145,7 @@ eskf = ESKF(
     p_gyro,
     S_a=S_a, # set the accelerometer correction matrix
     S_g=S_g, # set the gyro correction matrix,
-    debug=True # TODO: False to avoid expensive debug checks, can also be suppressed by calling 'python -O run_INS_simulated.py'
+    debug=False # TODO: False to avoid expensive debug checks, can also be suppressed by calling 'python -O run_INS_simulated.py'
 )
 
 # %% Allocate
@@ -194,10 +180,6 @@ P_pred[0][ERR_ATT_IDX ** 2] = 0.01 ** 2 * np.eye(3)# TODO # error rotation vecto
 P_pred[0][ERR_ACC_BIAS_IDX ** 2] = 0.001 * np.eye(3)# TODO
 P_pred[0][ERR_GYRO_BIAS_IDX ** 2] = 0.001 * np.eye(3)# TODO
 
-
-# %% Test: you can run this cell to test your implementation
-#dummy = eskf.predict(x_pred[0], P_pred[0], z_acceleration[0], z_gyroscope[0], dt)
-#dummy = eskf.update_GNSS_position(x_pred[0], P_pred[0], z_GNSS[0], R_GNSS, lever_arm)
 # %% Run estimation
 # run this file with 'python -O run_INS_simulated.py' to turn of assertions and get about 8/5 speed increase for longer runs
 
@@ -205,7 +187,7 @@ N: int = steps # TODO: choose a small value to begin with (500?), and gradually 
 doGNSS: bool = True  # TODO: Set this to False if you want to check that the predictions make sense over reasonable time lenghts
 
 GNSSk: int = 0  # keep track of current step in GNSS measurements
-taylor_approx_degree = 2
+taylor_approx_degree = 2 # The order of the taylor approximation to be done in discretizing the error-state matrices
 
 for k in tqdm(range(N)):
     if doGNSS and timeIMU[k] >= timeGNSS[GNSSk]:
@@ -297,10 +279,13 @@ if do_comparing:
     fig2, axs2 = plt.subplots(3, 1, num=2, clear=True)
     axs2[0].plot(t, z_gyroscope[:N, 0], label=r"$\phi_{IMU}$")
     axs2[0].plot(t, x_num_omega[:N, 0], label=r"$\phi_{num}$")
+
     axs2[1].plot(t, z_gyroscope[:N, 1], label=r"$\theta_{IMU}$")
     axs2[1].plot(t, x_num_omega[:N, 1], label=r"$\theta_{num}$")
+
     axs2[2].plot(t, z_gyroscope[:N, 2], label=r"$\psi_{IMU}$")
     axs2[2].plot(t, x_num_omega[:N, 2], label=r"$\psi_{num}$")
+
     axs2[0].legend()
     axs2[1].legend()
     axs2[2].legend()
@@ -423,13 +408,13 @@ if do_plotting:
     axs4[0].plot(t, np.linalg.norm(delta_x[:N, POS_IDX], axis=1))
     axs4[0].plot(
         np.arange(0, N, 100) * dt,
-        np.linalg.norm(x_true[99:N:100, :3] - z_GNSS[:GNSSk], axis=1),
+        np.linalg.norm(x_true[99:N:100, POS_IDX] - z_GNSS[:GNSSk], axis=1),
     )
     axs4[0].set(ylabel="Position error [m]")
     axs4[0].legend(
         [
             f"Estimation error ({np.sqrt(np.mean(np.sum(delta_x[:N, POS_IDX]**2, axis=1)))})",
-            f"Measurement error ({np.sqrt(np.mean(np.sum((x_true[99:N:100, POS_IDX] - z_GNSS[GNSSk - 1])**2, axis=1)))})",
+            f"Measurement error ({np.sqrt(np.mean(np.sum((x_true[99:N:100, POS_IDX] - z_GNSS[:GNSSk])**2, axis=1)))})",
         ]
     )
 
