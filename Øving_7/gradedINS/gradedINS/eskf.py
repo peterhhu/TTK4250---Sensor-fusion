@@ -284,6 +284,9 @@ class ESKF:
 
         D = la.block_diag(sigma_a, sigma_g, sigma_a_b, sigma_g_b)
 
+        Ad = taylor_approximate_A(A, Ts, degree)
+        GQGd = taylor_approximate_Q(A, G, D, Ts, degree)
+
         # V = np.zeros((30, 30))
         
         
@@ -295,20 +298,17 @@ class ESKF:
         # V[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX] = A.T
         # V = V * Ts
         
-        #assert V.shape == (
+        # assert V.shape == (
         #    30,
         #    30,
-        #), f"ESKF.discrete_error_matrices: Van Loan matrix shape incorrect {omega.shape}"
-        #VanLoanMatrix = la.expm(V)  # This can be slow...
+        # ), f"ESKF.discrete_error_matrices: Van Loan matrix shape incorrect {omega.shape}"
+        # VanLoanMatrix = la.expm(V)  # This can be slow...
 
         # Ad = VanLoanMatrix[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX] OUR CODE
         # GQGd = VanLoanMatrix[UPPER_LEFT_IDX * LOWER_RIGHT_IDX]
 
-        #Ad = VanLoanMatrix[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX].T
-        #GQGd = Ad @ VanLoanMatrix[UPPER_LEFT_IDX * LOWER_RIGHT_IDX]
-
-        Ad = taylor_approximate_A(A, Ts, degree)
-        GQGd = taylor_approximate_Q(A, G, D, Ts, degree)
+        # Ad = VanLoanMatrix[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX].T
+        # GQGd = Ad @ VanLoanMatrix[UPPER_LEFT_IDX * LOWER_RIGHT_IDX]
 
         assert Ad.shape == (
             15,
