@@ -44,8 +44,8 @@ def taylor_approximate_A(A: np.ndarray, Ts: float, degree: int) -> np.ndarray:
     i = 1
 
     while i <= degree:
+        matrix_product = matrix_product @ A
         Ad += matrix_product * (Ts ** i) / np.math.factorial(i)
-        matrix_product = matrix_product @ matrix_product
         i += 1
 
     return Ad

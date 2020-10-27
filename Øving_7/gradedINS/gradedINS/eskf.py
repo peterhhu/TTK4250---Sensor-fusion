@@ -306,8 +306,8 @@ class ESKF:
         #Ad = VanLoanMatrix[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX].T
         #GQGd = Ad @ VanLoanMatrix[UPPER_LEFT_IDX * LOWER_RIGHT_IDX]
 
-        Ad = taylor_approximate_A(A, Ts, 10)
-        GQGd = taylor_approximate_Q(A, G, D, Ts, 20)
+        Ad = taylor_approximate_A(A, Ts, 5)
+        GQGd = taylor_approximate_Q(A, G, D, Ts, 5)
 
         assert Ad.shape == (
             15,

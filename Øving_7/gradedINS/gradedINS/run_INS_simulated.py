@@ -140,14 +140,14 @@ cont_acc_bias_driving_noise_std = 6 * acc_bias_driving_noise_std / np.sqrt(1 / d
 # Position and velocity measurement
 #p_std = np.array([0.3, 0.3, 0.5])  # Measurement noise
 #R_GNSS = np.diag(p_std ** 2)
-p_std = np.array([0.3, 0.3, 1])  # Measurement noise
+p_std = np.array([0.3, 0.3, 0.5])  # Measurement noise
 R_GNSS = np.diag(p_std ** 2)
 
 #p_acc = 1e-16 
-p_acc = 100
+p_acc = 1e-16
 
 #p_gyro = 1e-16
-p_gyro = 100
+p_gyro = 1e-16
 
 # %% Estimator
 eskf = ESKF(
