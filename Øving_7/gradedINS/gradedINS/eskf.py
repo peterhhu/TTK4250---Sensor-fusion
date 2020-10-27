@@ -244,6 +244,7 @@ class ESKF:
         x_nominal: np.ndarray,
         acceleration: np.ndarray,
         omega: np.ndarray,
+        degree: int,
         Ts: float,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Calculate the discrete time linearized error state transition and covariance matrix.
@@ -283,22 +284,22 @@ class ESKF:
 
         D = la.block_diag(sigma_a, sigma_g, sigma_a_b, sigma_g_b)
 
-        V = np.zeros((30, 30))
+        # V = np.zeros((30, 30))
         
         
-        UPPER_LEFT_IDX = CatSlice(start = 0, stop = 15)
-        LOWER_RIGHT_IDX = CatSlice(start = 15, stop = 30)
+        # UPPER_LEFT_IDX = CatSlice(start = 0, stop = 15)
+        # LOWER_RIGHT_IDX = CatSlice(start = 15, stop = 30)
         
-        V[UPPER_LEFT_IDX * UPPER_LEFT_IDX] = -A
-        V[UPPER_LEFT_IDX * LOWER_RIGHT_IDX] = G @ self.Q_err @ G.T
-        V[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX] = A.T
-        V = V * Ts
+        # V[UPPER_LEFT_IDX * UPPER_LEFT_IDX] = -A
+        # V[UPPER_LEFT_IDX * LOWER_RIGHT_IDX] = G @ self.Q_err @ G.T
+        # V[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX] = A.T
+        # V = V * Ts
         
-        assert V.shape == (
-            30,
-            30,
-        ), f"ESKF.discrete_error_matrices: Van Loan matrix shape incorrect {omega.shape}"
-        VanLoanMatrix = la.expm(V)  # This can be slow...
+        #assert V.shape == (
+        #    30,
+        #    30,
+        #), f"ESKF.discrete_error_matrices: Van Loan matrix shape incorrect {omega.shape}"
+        #VanLoanMatrix = la.expm(V)  # This can be slow...
 
         # Ad = VanLoanMatrix[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX] OUR CODE
         # GQGd = VanLoanMatrix[UPPER_LEFT_IDX * LOWER_RIGHT_IDX]
@@ -306,8 +307,8 @@ class ESKF:
         #Ad = VanLoanMatrix[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX].T
         #GQGd = Ad @ VanLoanMatrix[UPPER_LEFT_IDX * LOWER_RIGHT_IDX]
 
-        Ad = taylor_approximate_A(A, Ts, 5)
-        GQGd = taylor_approximate_Q(A, G, D, Ts, 5)
+        Ad = taylor_approximate_A(A, Ts, degree)
+        GQGd = taylor_approximate_Q(A, G, D, Ts, degree)
 
         assert Ad.shape == (
             15,
@@ -326,6 +327,7 @@ class ESKF:
         P: np.ndarray,
         acceleration: np.ndarray,
         omega: np.ndarray,
+        degree: int,
         Ts: float,
     ) -> np.ndarray:
         """Predict the error state covariance Ts time units ahead using linearized continuous time dynamics.
@@ -358,7 +360,7 @@ class ESKF:
             3,
         ), f"ESKF.predict_covariance: omega shape incorrect {omega.shape}"
 
-        Ad, GQGd = self.discrete_error_matrices(x_nominal, acceleration, omega, Ts)
+        Ad, GQGd = self.discrete_error_matrices(x_nominal, acceleration, omega, degree, Ts)
 
         # P_predicted = Ad @ P @ Ad.T + Ad.T @ GQGd OUR CODE
 
@@ -376,6 +378,7 @@ class ESKF:
         P: np.ndarray,
         z_acc: np.ndarray,
         z_gyro: np.ndarray,
+        degree: int,
         Ts: float,
     ) -> Tuple[np.array, np.array]:
         """Predict the nominal estimate and error state covariance Ts time units using IMU measurements z_*.
@@ -419,7 +422,7 @@ class ESKF:
 
         # perform prediction
         x_nominal_predicted = self.predict_nominal(x_nominal, acceleration, omega, Ts)
-        P_predicted = self.predict_covariance(x_nominal, P, acceleration, omega, Ts)
+        P_predicted = self.predict_covariance(x_nominal, P, acceleration, omega, degree, Ts)
 
         assert x_nominal_predicted.shape == (
             16,

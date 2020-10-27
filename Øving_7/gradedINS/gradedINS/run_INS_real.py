@@ -177,6 +177,7 @@ P_pred[0][ERR_GYRO_BIAS_IDX**2] = (1e-3)**2 * np.eye(3)
 
 N = 500 #steps
 GNSSk = 0
+taylor_approx_degree = 2
 
 for k in tqdm(range(N)):
     if timeIMU[k] >= timeGNSS[GNSSk]:
@@ -194,7 +195,7 @@ for k in tqdm(range(N)):
         P_est[k] = P_pred[k]# TODO
 
     if k < N - 1:
-        x_pred[k + 1], P_pred[k + 1] = eskf.predict(x_est[k], P_pred[k], z_acceleration[k + 1], z_gyroscope[k + 1], Ts_IMU[k + 1])# TODO
+        x_pred[k + 1], P_pred[k + 1] = eskf.predict(x_est[k], P_pred[k], z_acceleration[k + 1], z_gyroscope[k + 1], taylor_approx_degree, Ts_IMU[k + 1])# TODO
 
     if eskf.debug:
         assert np.all(np.isfinite(P_pred[k])), f"Not finite P_pred at index {k + 1}"
