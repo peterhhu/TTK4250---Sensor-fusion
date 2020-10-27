@@ -25,3 +25,47 @@ def cross_product_matrix(n: ArrayLike, debug: bool = True) -> np.ndarray:
         ), f"utils.cross_product_matrix: Result is not skew-symmetric: {S}"
 
     return S
+
+
+def taylor_approximate_A(A: np.ndarray, Ts: float, degree: int) -> np.ndarray:
+    """Perform taylor approximation of Q.
+
+    Args:
+        A (np.ndarray): System matrix
+        degree (int): Order of the approximation
+
+    Returns:
+        np.ndarray: Discretized A-matrix
+    """
+    Ad = np.eye(A.shape[0])
+
+    matrix_product = Ad
+
+    i = 1
+
+    while i <= degree:
+        Ad += matrix_product * (Ts ** i) / np.math.factorial(i)
+        matrix_product = matrix_product @ matrix_product
+        i += 1
+
+    return Ad
+
+def taylor_approximate_Q(A: np.ndarray, G: np.ndarray, D: np.ndarray, Ts: float, degree: int) -> np.ndarray:
+    """Perform taylor approximation of Q.
+
+    Args:
+        A (np.ndarray): System matrix
+        G (np.ndarray): Noise matrix
+        D (np.ndarray): Noise covariance
+        degree (int): Order of the approximation
+
+    Returns:
+        np.ndarray: Discretized Q-matrix
+    """
+
+    exp_A_approx = taylor_approximate_A(A, Ts, degree)
+    exp_A_transp_approx = taylor_approximate_A(A.T, Ts, degree)
+
+    Qd = exp_A_approx @ G @ D @ G.T @ exp_A_transp_approx * Ts
+
+    return Qd

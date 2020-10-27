@@ -15,7 +15,11 @@ from quaternion import (
 )
 
 # from state import NominalIndex, ErrorIndex
-from utils import cross_product_matrix
+from utils import (
+    cross_product_matrix, 
+    taylor_approximate_A, 
+    taylor_approximate_Q,
+)
 
 
 # %% indices
@@ -272,6 +276,13 @@ class ESKF:
         A = self.Aerr(x_nominal, acceleration, omega)
         G = self.Gerr(x_nominal)
 
+        sigma_a = np.eye(3)*self.sigma_acc ** 2
+        sigma_g = np.eye(3)*self.sigma_gyro ** 2
+        sigma_a_b = np.eye(3)*self.sigma_acc_bias ** 2
+        sigma_g_b = np.eye(3)*self.sigma_gyro_bias ** 2
+
+        D = la.block_diag(sigma_a, sigma_g, sigma_a_b, sigma_g_b)
+
         V = np.zeros((30, 30))
         
         
@@ -292,8 +303,11 @@ class ESKF:
         # Ad = VanLoanMatrix[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX] OUR CODE
         # GQGd = VanLoanMatrix[UPPER_LEFT_IDX * LOWER_RIGHT_IDX]
 
-        Ad = VanLoanMatrix[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX].T
-        GQGd = Ad @ VanLoanMatrix[UPPER_LEFT_IDX * LOWER_RIGHT_IDX]
+        #Ad = VanLoanMatrix[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX].T
+        #GQGd = Ad @ VanLoanMatrix[UPPER_LEFT_IDX * LOWER_RIGHT_IDX]
+
+        Ad = taylor_approximate_A(A, Ts, 10)
+        GQGd = taylor_approximate_Q(A, G, D, Ts, 20)
 
         assert Ad.shape == (
             15,
