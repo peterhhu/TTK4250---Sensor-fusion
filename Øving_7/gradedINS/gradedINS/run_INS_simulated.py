@@ -6,6 +6,7 @@ import scipy.stats
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+from typing import List
 
 try: # see if tqdm is available, otherwise define it as a dummy
     try: # Ipython seem to require different tqdm.. try..except seem to be the easiest way to check
@@ -183,7 +184,7 @@ P_pred[0][ERR_GYRO_BIAS_IDX ** 2] = 0.001 * np.eye(3)# TODO
 # %% Run estimation
 # run this file with 'python -O run_INS_simulated.py' to turn of assertions and get about 8/5 speed increase for longer runs
 
-N: int = steps # TODO: choose a small value to begin with (500?), and gradually increase as you OK results
+N: int = 500 # TODO: choose a small value to begin with (500?), and gradually increase as you OK results
 doGNSS: bool = True  # TODO: Set this to False if you want to check that the predictions make sense over reasonable time lenghts
 
 GNSSk: int = 0  # keep track of current step in GNSS measurements
@@ -427,6 +428,29 @@ if do_plotting:
     confprob = 0.95
     CI15 = np.array(scipy.stats.chi2.interval(confprob, 15)).reshape((2, 1))
     CI3 = np.array(scipy.stats.chi2.interval(confprob, 3)).reshape((2, 1))
+
+    CI15N = (np.array(scipy.stats.chi2.interval(confprob, 15 * N)) / N).reshape((2, 1))
+    CI3N = (np.array(scipy.stats.chi2.interval(confprob, 3 * N)) / N).reshape((2, 1))
+
+    CI3GNNSk = (np.array(scipy.stats.chi2.interval(confprob, 3 * GNSSk)) / GNSSk).reshape((2, 1))
+
+    ANEES_pos = np.mean(NEES_pos[:N])
+    ANEES_vel = np.mean(NEES_vel[:N])
+    ANEES_att = np.mean(NEES_att[:N])
+    ANEES_accbias = np.mean(NEES_accbias[:N])
+    ANEES_gyrobias = np.mean(NEES_gyrobias[:N])
+    ANEES_all = np.mean(NEES_all[:N])
+    ANIS = np.mean(NIS[:GNSSk])
+
+    # Average NIS and NEESes
+    print(f"ANEES_pos = {ANEES_pos:.2f} with CI = [{CI3N[0]}, {CI3N[1]}]")
+    print(f"ANEES_vel = {ANEES_vel:.2f} with CI = [{CI3N[0]}, {CI3N[1]}]")
+    print(f"ANEES_att = {ANEES_att:.2f} with CI = [{CI3N[0]}, {CI3N[1]}]")
+    print(f"ANEES_accbias = {ANEES_accbias:.2f} with CI = [{CI3N[0]}, {CI3N[1]}]")
+    print(f"ANEES_gyro_bias = {ANEES_gyrobias:.2f} with CI = [{CI3N[0]}, {CI3N[1]}]")
+    print(f"ANEES = {ANEES_all:.2f} with CI = [{CI15N[0]}, {CI15N[1]}]")
+    print(f"ANIS = {ANIS:.2f} with CI = [{CI3GNNSk[0]}, {CI3GNNSk[1]}]")
+
 
     fig5, axs5 = plt.subplots(7, 1, num=5, clear=True)
 
