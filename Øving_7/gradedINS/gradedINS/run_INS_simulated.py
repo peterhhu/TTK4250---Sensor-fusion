@@ -184,7 +184,7 @@ P_pred[0][ERR_GYRO_BIAS_IDX ** 2] = 0.001 * np.eye(3)# TODO
 # %% Run estimation
 # run this file with 'python -O run_INS_simulated.py' to turn of assertions and get about 8/5 speed increase for longer runs
 
-N: int = steps # TODO: choose a small value to begin with (500?), and gradually increase as you OK results
+N: int = 5000 # TODO: choose a small value to begin with (500?), and gradually increase as you OK results
 doGNSS: bool = True  # TODO: Set this to False if you want to check that the predictions make sense over reasonable time lenghts
 
 GNSSk: int = 0  # keep track of current step in GNSS measurements
@@ -223,79 +223,6 @@ for k in tqdm(range(N)):
 
 # %% Plots
 do_plotting = True
-do_comparing = False
-
-if do_comparing:
-    x_num_acc = np.zeros((N, 3))
-    x_num_acc[0, :] = [0,0,0] 
-
-
-    x_num_omega = np.zeros((N, 3))
-    x_num_omega[0, :] = [0,0,0]
-
-
-    for i in range(N):
-        if i > 0:
-            x_num_acc[i, :] = (x_true[i, VEL_IDX] - x_true[i-1, VEL_IDX]) / dt
-
-            omega1 = quaternion_to_euler(x_true[i-1, ATT_IDX])
-            omega2 = quaternion_to_euler(x_true[i, ATT_IDX])
-
-            x_num_omega[i, :] = (omega2 - omega1) / dt
-
-
-    x_num_acc_lower = x_num_acc - acc_std * x_num_acc
-    x_num_acc_upper = x_num_acc + acc_std * x_num_acc
-
-    x_num_omega = x_num_omega * 180/np.pi # from rad to deg
-    z_gyroscope = z_gyroscope * 180/np.pi # from rad to deg
-
-    # Plot measured acceleration against numerical acceleration
-    t = np.linspace(0, dt * (N - 1), N)
-    fig1, axs1 = plt.subplots(3, 1, num=1, clear=True)
-    axs1[0].plot(t, z_acceleration[:N, 0], label=r"$x_{IMU}$")
-    axs1[0].plot(t, x_num_acc[:N, 0], label=r"$x_a(num)$")
-    axs1[0].plot(t, x_num_acc_upper[:N, 0], label=r"$x_a(num_upper)$")
-    axs1[0].plot(t, x_num_acc_lower[:N, 0], label=r"$x_a(num_lower)$")
-
-    axs1[1].plot(t, z_acceleration[:N, 1], label=r"$y_{IMU}$")
-    axs1[1].plot(t, x_num_acc[:N, 1], label=r"$y_a(num)$")
-    axs1[1].plot(t, x_num_acc_upper[:N, 1], label=r"$y_a(num_upper)$")
-    axs1[1].plot(t, x_num_acc_lower[:N, 1], label=r"$y_a(num_lower)$")
-
-    axs1[2].plot(t, z_acceleration[:N, 2], label=r"$z_{IMU}$")
-    axs1[2].plot(t, x_num_acc[:N, 2], label=r"$z_a(num)$")
-    axs1[2].plot(t, x_num_acc_upper[:N, 2], label=r"$z_a(num_upper)$")
-    axs1[2].plot(t, x_num_acc_lower[:N, 2], label=r"$z_a(num_lower)$")
-
-    axs1[0].legend()
-    axs1[1].legend()
-    axs1[2].legend()
-    axs1[2].set_xlabel("Time [s]")
-    axs1[0].set_ylabel("Acceleration [m/s^2]")
-    axs1[1].set_ylabel("Acceleration [m/s^2]")
-    axs1[2].set_ylabel("Acceleration [m/s^2]")
-
-    # Plot measured angular velocity against numerical velocity
-    fig2, axs2 = plt.subplots(3, 1, num=2, clear=True)
-    axs2[0].plot(t, z_gyroscope[:N, 0], label=r"$\phi_{IMU}$")
-    axs2[0].plot(t, x_num_omega[:N, 0], label=r"$\phi_{num}$")
-
-    axs2[1].plot(t, z_gyroscope[:N, 1], label=r"$\theta_{IMU}$")
-    axs2[1].plot(t, x_num_omega[:N, 1], label=r"$\theta_{num}$")
-
-    axs2[2].plot(t, z_gyroscope[:N, 2], label=r"$\psi_{IMU}$")
-    axs2[2].plot(t, x_num_omega[:N, 2], label=r"$\psi_{num}$")
-
-    axs2[0].legend()
-    axs2[1].legend()
-    axs2[2].legend()
-    axs2[2].set_xlabel("Time [s]")
-    axs2[0].set_ylabel("Angular velocity[deg/s]")
-    axs2[1].set_ylabel("Angular velocity[deg/s]")
-    axs2[2].set_ylabel("Angular velocity[deg/s]")
-
-    plt.show()
 
 if do_plotting:
 
