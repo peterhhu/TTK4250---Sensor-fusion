@@ -144,8 +144,8 @@ eskf = ESKF(
     cont_rate_bias_driving_noise_std,
     p_acc,
     p_gyro,
-    S_a=S_a, # set the accelerometer correction matrix
-    S_g=S_g, # set the gyro correction matrix,
+    S_a= S_a, # set the accelerometer correction matrix
+    S_g= S_g, # set the gyro correction matrix,
     debug=False # TODO: False to avoid expensive debug checks, can also be suppressed by calling 'python -O run_INS_simulated.py'
 )
 
@@ -184,7 +184,7 @@ P_pred[0][ERR_GYRO_BIAS_IDX ** 2] = 0.001 * np.eye(3)# TODO
 # %% Run estimation
 # run this file with 'python -O run_INS_simulated.py' to turn of assertions and get about 8/5 speed increase for longer runs
 
-N: int = 500 # TODO: choose a small value to begin with (500?), and gradually increase as you OK results
+N: int = steps # TODO: choose a small value to begin with (500?), and gradually increase as you OK results
 doGNSS: bool = True  # TODO: Set this to False if you want to check that the predictions make sense over reasonable time lenghts
 
 GNSSk: int = 0  # keep track of current step in GNSS measurements
