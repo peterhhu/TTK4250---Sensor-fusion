@@ -116,19 +116,21 @@ gnss_steps = len(z_GNSS)
 
 # %% Measurement noise
 # Continous noise
-cont_gyro_noise_std = 4.36e-5  # (rad/s)/sqrt(Hz) # TODO
-cont_acc_noise_std = 1.167e-3  # (m/s**2)/sqrt(Hz) # TODO
+cont_gyro_noise_std = 4.36e-5  # (rad/s)/sqrt(Hz)
+cont_acc_noise_std = 1.167e-3  # (m/s**2)/sqrt(Hz)
 
 # Discrete sample noise at simulation rate used
-rate_std = cont_gyro_noise_std*np.sqrt(1/dt)
-acc_std  = cont_acc_noise_std*np.sqrt(1/dt)
+rate_std = 0.5 * cont_gyro_noise_std * np.sqrt(1 / dt)
+acc_std = 0.5 * cont_acc_noise_std * np.sqrt(1 / dt)
 
 # Bias values
-rate_bias_driving_noise_std = 5e-4 # TODO
-cont_rate_bias_driving_noise_std = rate_bias_driving_noise_std/np.sqrt(1/dt)
+rate_bias_driving_noise_std = 5e-4
+cont_rate_bias_driving_noise_std = (
+    (1 / 3) * rate_bias_driving_noise_std / np.sqrt(1 / dt)
+)
 
-acc_bias_driving_noise_std = 4e-3 # TODO
-cont_acc_bias_driving_noise_std = acc_bias_driving_noise_std/np.sqrt(1/dt)
+acc_bias_driving_noise_std = 4e-3
+cont_acc_bias_driving_noise_std = 6 * acc_bias_driving_noise_std / np.sqrt(1 / dt)
 
 # Position and velocity measurement
 p_acc = 1e-16 # TODO
@@ -160,7 +162,7 @@ NIS = np.zeros(gnss_steps)
 
 # %% Initialise
 x_pred[0, POS_IDX] = z_GNSS[0,:] # Using first GPS-measurement
-x_pred[0, VEL_IDX] = np.array([20, 0, 0]) # starting at 20 m/s due north
+x_pred[0, VEL_IDX] = np.array([0, 0, 0]) # starting at 20 m/s due north
 x_pred[0, ATT_IDX] = np.array([
     np.cos(45 * np.pi / 180),
     0, 0,
@@ -175,13 +177,13 @@ P_pred[0][ERR_GYRO_BIAS_IDX**2] = (1e-3)**2 * np.eye(3)
 
 # %% Run estimation
 
-N = 100000 #steps
+N = 75000 #steps
 GNSSk = 0
 taylor_approx_degree = 2 # The order of the taylor approximation to be done in discretizing the error-state matrices
 
 for k in tqdm(range(N)):
     if timeIMU[k] >= timeGNSS[GNSSk]:
-        R_GNSS = np.eye(3) * accuracy_GNSS[GNSSk] * z_GNSS[GNSSk] # TODO: Current GNSS covariance
+        R_GNSS = np.diag([0.2, 0.2, 0.1])# np.eye(3) * accuracy_GNSS[GNSSk] # TODO: Current GNSS covariance
         NIS[GNSSk] = eskf.NIS_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)# TODO
 
         x_est[k], P_est[k] = eskf.update_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)# TODO

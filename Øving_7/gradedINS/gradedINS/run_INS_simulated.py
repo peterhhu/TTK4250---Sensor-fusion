@@ -120,7 +120,7 @@ rate_std = 0.5 * cont_gyro_noise_std * np.sqrt(1 / dt)
 acc_std = 0.5 * cont_acc_noise_std * np.sqrt(1 / dt)
 
 # Bias values
-rate_bias_driving_noise_std = 5e-5
+rate_bias_driving_noise_std = 5e-4
 cont_rate_bias_driving_noise_std = (
     (1 / 3) * rate_bias_driving_noise_std / np.sqrt(1 / dt)
 )
@@ -172,6 +172,7 @@ NEES_gyrobias = np.zeros(steps)
 x_pred[0, POS_IDX] = x_true[0, POS_IDX]
 x_pred[0, VEL_IDX] = np.array([20, 0, 0])  # starting at 20 m/s due north
 x_pred[0, 6] = 1  # no initial rotation: nose to North, right to East, and belly down
+x_pred[0, ACC_BIAS_IDX + GYRO_BIAS_IDX] = x_true[0, ACC_BIAS_IDX + GYRO_BIAS_IDX]
 
 # These have to be set reasonably to get good results
 
