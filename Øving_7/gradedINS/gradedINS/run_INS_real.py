@@ -183,7 +183,7 @@ taylor_approx_degree = 2 # The order of the taylor approximation to be done in d
 
 for k in tqdm(range(N)):
     if timeIMU[k] >= timeGNSS[GNSSk]:
-        R_GNSS = np.diag([0.2, 0.2, 0.1])# np.eye(3) * accuracy_GNSS[GNSSk] # TODO: Current GNSS covariance
+        R_GNSS = np.diag([0.2, 0.2, 0.1]) * accuracy_GNSS[GNSSk] # TODO: Current GNSS covariance
         NIS[GNSSk] = eskf.NIS_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)# TODO
 
         x_est[k], P_est[k] = eskf.update_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)# TODO
