@@ -184,7 +184,7 @@ P_pred[0][ERR_GYRO_BIAS_IDX ** 2] = 0.001 * np.eye(3)# TODO
 # %% Run estimation
 # run this file with 'python -O run_INS_simulated.py' to turn of assertions and get about 8/5 speed increase for longer runs
 
-N: int = 5000 # TODO: choose a small value to begin with (500?), and gradually increase as you OK results
+N: int = steps # TODO: choose a small value to begin with (500?), and gradually increase as you OK results
 doGNSS: bool = True  # TODO: Set this to False if you want to check that the predictions make sense over reasonable time lenghts
 
 GNSSk: int = 0  # keep track of current step in GNSS measurements
@@ -192,16 +192,16 @@ taylor_approx_degree = 2 # The order of the taylor approximation to be done in d
 
 for k in tqdm(range(N)):
     if doGNSS and timeIMU[k] >= timeGNSS[GNSSk]:
-        NIS[GNSSk] = eskf.NIS_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm) # TODO:
+        NIS[GNSSk] = eskf.NIS_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)
 
-        x_est[k], P_est[k] = eskf.update_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm) # TODO:
+        x_est[k], P_est[k] = eskf.update_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)
         assert np.all(np.isfinite(P_est[k])), f"Not finite P_pred at index {k}"
 
         GNSSk += 1
     else:
         # no updates, so let us take estimate = prediction
-        x_est[k] = x_pred[k] # TODO
-        P_est[k] = P_pred[k] # TODO
+        x_est[k] = x_pred[k]
+        P_est[k] = P_pred[k]
 
     delta_x[k] = eskf.delta_x(x_est[k], x_true[k])
 
@@ -212,10 +212,10 @@ for k in tqdm(range(N)):
         NEES_att[k],
         NEES_accbias[k],
         NEES_gyrobias[k],
-    ) = eskf.NEESes(x_est[k], P_est[k], x_true[k])# TODO: The true error state at step k
+    ) = eskf.NEESes(x_est[k], P_est[k], x_true[k])
 
     if k < N - 1:
-        x_pred[k + 1], P_pred[k + 1] = eskf.predict(x_est[k], P_est[k], z_acceleration[k + 1], z_gyroscope[k + 1], taylor_approx_degree, dt)# TODO: Hint: measurements come from the the present and past, not the future
+        x_pred[k + 1], P_pred[k + 1] = eskf.predict(x_est[k], P_est[k], z_acceleration[k + 1], z_gyroscope[k + 1], taylor_approx_degree, dt)
 
     if eskf.debug:
         assert np.all(np.isfinite(P_pred[k])), f"Not finite P_pred at index {k + 1}"
@@ -267,7 +267,7 @@ if do_plotting:
 
     axs2[4].plot(t, x_est[:N, GYRO_BIAS_IDX] * 180 / np.pi * 3600)
     axs2[4].set(ylabel="Gyro bias [deg/h]")
-    axs2[4].legend(["$x$", "$y$", "$z$"])
+    axs2[4].legend(["$p$", "$q$", "$r$"])
 
 
     fig2.suptitle("States estimates")
@@ -279,9 +279,9 @@ if do_plotting:
     axs3[0].set(ylabel="NED position error [m]")
     axs3[0].legend(
         [
-            f"North ({np.sqrt(np.mean(delta_x[:N, 0]**2))})",
-            f"East ({np.sqrt(np.mean(delta_x[:N, 1]**2))})",
-            f"Down ({np.sqrt(np.mean(delta_x[:N, 2]**2))})",
+            f"North ({np.sqrt(np.mean(delta_x[:N, 0]**2)):.4f})",
+            f"East ({np.sqrt(np.mean(delta_x[:N, 1]**2)):.4f})",
+            f"Down ({np.sqrt(np.mean(delta_x[:N, 2]**2)):.4f})",
         ]
     )
 
@@ -289,9 +289,9 @@ if do_plotting:
     axs3[1].set(ylabel="Velocities error [m]")
     axs3[1].legend(
         [
-            f"North ({np.sqrt(np.mean(delta_x[:N, 3]**2))})",
-            f"East ({np.sqrt(np.mean(delta_x[:N, 4]**2))})",
-            f"Down ({np.sqrt(np.mean(delta_x[:N, 5]**2))})",
+            f"North ({np.sqrt(np.mean(delta_x[:N, 3]**2)):.4f})",
+            f"East ({np.sqrt(np.mean(delta_x[:N, 4]**2)):.4f})",
+            f"Down ({np.sqrt(np.mean(delta_x[:N, 5]**2)):.4f})",
         ]
     )
 
@@ -302,9 +302,9 @@ if do_plotting:
     axs3[2].set(ylabel="Euler angles error [deg]")
     axs3[2].legend(
         [
-            rf"$\phi$ ({np.sqrt(np.mean((eul_error[:N, 0] * 180 / np.pi)**2))})",
-            rf"$\theta$ ({np.sqrt(np.mean((eul_error[:N, 1] * 180 / np.pi)**2))})",
-            rf"$\psi$ ({np.sqrt(np.mean((eul_error[:N, 2] * 180 / np.pi)**2))})",
+            rf"$\phi$ ({np.sqrt(np.mean((eul_error[:N, 0] * 180 / np.pi)**2)):.4f})",
+            rf"$\theta$ ({np.sqrt(np.mean((eul_error[:N, 1] * 180 / np.pi)**2)):.4f})",
+            rf"$\psi$ ({np.sqrt(np.mean((eul_error[:N, 2] * 180 / np.pi)**2)):.4f})",
         ]
     )
 
@@ -312,9 +312,9 @@ if do_plotting:
     axs3[3].set(ylabel="Accl bias error [m/s^2]")
     axs3[3].legend(
         [
-            f"$x$ ({np.sqrt(np.mean(delta_x[:N, 9]**2))})",
-            f"$y$ ({np.sqrt(np.mean(delta_x[:N, 10]**2))})",
-            f"$z$ ({np.sqrt(np.mean(delta_x[:N, 11]**2))})",
+            f"$x$ ({np.sqrt(np.mean(delta_x[:N, 9]**2)):.4f})",
+            f"$y$ ({np.sqrt(np.mean(delta_x[:N, 10]**2)):.4f})",
+            f"$z$ ({np.sqrt(np.mean(delta_x[:N, 11]**2)):.4f})",
         ]
     )
 
@@ -322,9 +322,9 @@ if do_plotting:
     axs3[4].set(ylabel="Gyro bias error [deg/s]")
     axs3[4].legend(
         [
-            f"$x$ ({np.sqrt(np.mean((delta_x[:N, 12]* 180 / np.pi)**2))})",
-            f"$y$ ({np.sqrt(np.mean((delta_x[:N, 13]* 180 / np.pi)**2))})",
-            f"$z$ ({np.sqrt(np.mean((delta_x[:N, 14]* 180 / np.pi)**2))})",
+            f"$p$ ({np.sqrt(np.mean((delta_x[:N, 12]* 180 / np.pi)**2)):.4f})",
+            f"$q$ ({np.sqrt(np.mean((delta_x[:N, 13]* 180 / np.pi)**2)):.4f})",
+            f"$r$ ({np.sqrt(np.mean((delta_x[:N, 14]* 180 / np.pi)**2)):.4f})",
         ]
     )
 
@@ -341,14 +341,14 @@ if do_plotting:
     axs4[0].set(ylabel="Position error [m]")
     axs4[0].legend(
         [
-            f"Estimation error ({np.sqrt(np.mean(np.sum(delta_x[:N, POS_IDX]**2, axis=1)))})",
-            f"Measurement error ({np.sqrt(np.mean(np.sum((x_true[99:N:100, POS_IDX] - z_GNSS[:GNSSk])**2, axis=1)))})",
+            f"Estimation error ({np.sqrt(np.mean(np.sum(delta_x[:N, POS_IDX]**2, axis=1))):.4f})",
+            f"Measurement error ({np.sqrt(np.mean(np.sum((x_true[99:N:100, POS_IDX] - z_GNSS[:GNSSk])**2, axis=1))):.4f})",
         ]
     )
 
     axs4[1].plot(t, np.linalg.norm(delta_x[:N, VEL_IDX], axis=1))
     axs4[1].set(ylabel="Speed error [m/s]")
-    axs4[1].legend([f"RMSE: {np.sqrt(np.mean(np.sum(delta_x[:N, VEL_IDX]**2, axis=1)))}"])
+    axs4[1].legend([f"RMSE: {np.sqrt(np.mean(np.sum(delta_x[:N, VEL_IDX]**2, axis=1))):.4f}"])
 
 
     # %% Consistency
@@ -356,10 +356,10 @@ if do_plotting:
     CI15 = np.array(scipy.stats.chi2.interval(confprob, 15)).reshape((2, 1))
     CI3 = np.array(scipy.stats.chi2.interval(confprob, 3)).reshape((2, 1))
 
-    CI15N = (np.array(scipy.stats.chi2.interval(confprob, 15 * N)) / N).reshape((2, 1))
-    CI3N = (np.array(scipy.stats.chi2.interval(confprob, 3 * N)) / N).reshape((2, 1))
+    CI15_N = np.array(scipy.stats.chi2.interval(confprob, 15 * N)) / N
+    CI3_N = np.array(scipy.stats.chi2.interval(confprob, 3 * N)) / N
 
-    CI3GNNSk = (np.array(scipy.stats.chi2.interval(confprob, 3 * GNSSk)) / GNSSk).reshape((2, 1))
+    CI3_GNNSk = (np.array(scipy.stats.chi2.interval(confprob, 3 * GNSSk)) / GNSSk)
 
     ANEES_pos = np.mean(NEES_pos[:N])
     ANEES_vel = np.mean(NEES_vel[:N])
@@ -370,13 +370,13 @@ if do_plotting:
     ANIS = np.mean(NIS[:GNSSk])
 
     # Average NIS and NEESes
-    print(f"ANEES_pos = {ANEES_pos:.2f} with CI = [{CI3N[0]}, {CI3N[1]}]")
-    print(f"ANEES_vel = {ANEES_vel:.2f} with CI = [{CI3N[0]}, {CI3N[1]}]")
-    print(f"ANEES_att = {ANEES_att:.2f} with CI = [{CI3N[0]}, {CI3N[1]}]")
-    print(f"ANEES_accbias = {ANEES_accbias:.2f} with CI = [{CI3N[0]}, {CI3N[1]}]")
-    print(f"ANEES_gyro_bias = {ANEES_gyrobias:.2f} with CI = [{CI3N[0]}, {CI3N[1]}]")
-    print(f"ANEES = {ANEES_all:.2f} with CI = [{CI15N[0]}, {CI15N[1]}]")
-    print(f"ANIS = {ANIS:.2f} with CI = [{CI3GNNSk[0]}, {CI3GNNSk[1]}]")
+    print(f"ANEES_pos = {ANEES_pos:.2f} with CI = [{CI3_N[0]:.2f}, {CI3_N[1]:.2f}]")
+    print(f"ANEES_vel = {ANEES_vel:.2f} with CI = [{CI3_N[0]:.2f}, {CI3_N[1]:.2f}]")
+    print(f"ANEES_att = {ANEES_att:.2f} with CI = [{CI3_N[0]:.2f}, {CI3_N[1]:.2f}]")
+    print(f"ANEES_accbias = {ANEES_accbias:.2f} with CI = [{CI3_N[0]:.2f}, {CI3_N[1]:.2f}]")
+    print(f"ANEES_gyrobias = {ANEES_gyrobias:.2f} with CI = [{CI3_N[0]:.2f}, {CI3_N[1]:.2f}]")
+    print(f"ANEES = {ANEES_all:.2f} with CI = [{CI15_N[0]:.2f}, {CI15_N[1]:.2f}]")
+    print(f"ANIS = {ANIS:.2f} with CI = [{CI3_GNNSk[0]:.2f}, {CI3_GNNSk[1]:.2f}]")
 
 
     fig5, axs5 = plt.subplots(7, 1, num=5, clear=True)
