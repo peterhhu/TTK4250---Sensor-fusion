@@ -292,13 +292,13 @@ class ESKF:
         # V[UPPER_LEFT_IDX * UPPER_LEFT_IDX] = -A
         # V[UPPER_LEFT_IDX * LOWER_RIGHT_IDX] = G @ self.Q_err @ G.T
         # V[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX] = A.T
-        # V = V * Ts
         
         # assert V.shape == (
         #    30,
         #    30,
         # ), f"ESKF.discrete_error_matrices: Van Loan matrix shape incorrect {omega.shape}"
-        # VanLoanMatrix = la.expm(V)  # This can be slow...
+        # VanLoanMatrix = la.expm(V*Ts)  # This can be slow...
+        # # VanLoanMatrix = np.eye(30) + V * Ts + V @ V * Ts ** 2 / 2
 
         # Ad = VanLoanMatrix[LOWER_RIGHT_IDX * LOWER_RIGHT_IDX].T
         # GQGd = Ad @ VanLoanMatrix[UPPER_LEFT_IDX * LOWER_RIGHT_IDX]

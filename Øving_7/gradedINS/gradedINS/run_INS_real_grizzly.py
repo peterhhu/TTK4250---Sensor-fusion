@@ -1,4 +1,3 @@
-# %% imports
 import scipy
 import scipy.io
 import scipy.stats
@@ -108,8 +107,6 @@ z_GNSS = loaded_data["zGNSS"].T
 z_gyroscope = loaded_data["zGyro"].T
 accuracy_GNSS = loaded_data['GNSSaccuracy'].ravel()
 
-Ts_IMU = [0, *np.diff(timeIMU)]
-
 dt = np.mean(np.diff(timeIMU))
 steps = len(z_acceleration)
 gnss_steps = len(z_GNSS)
@@ -120,8 +117,8 @@ cont_gyro_noise_std = 4.36e-5  # (rad/s)/sqrt(Hz)
 cont_acc_noise_std = 1.167e-3  # (m/s**2)/sqrt(Hz)
 
 # Discrete sample noise at simulation rate used
-rate_std = cont_gyro_noise_std / np.sqrt(dt)
-acc_std = cont_acc_noise_std / np.sqrt(dt)
+rate_std = cont_gyro_noise_std * np.sqrt(1 / dt)
+acc_std = cont_acc_noise_std * np.sqrt(1 / dt)
 
 # Bias values
 rate_bias_driving_noise_std = 5e-5
@@ -133,9 +130,8 @@ acc_bias_driving_noise_std = 4e-3
 cont_acc_bias_driving_noise_std = 6 * acc_bias_driving_noise_std / np.sqrt(1 / dt)
 
 # Position and velocity measurement
-p_acc = 1e-16 # TODO
-
-p_gyro = 1e-16# TODO
+p_acc = 1e-16
+p_gyro = 1e-16
 
 # %% Estimator
 eskf = ESKF(
@@ -159,10 +155,12 @@ x_pred = np.zeros((steps, 16))
 P_pred = np.zeros((steps, 15, 15))
 
 NIS = np.zeros(gnss_steps)
+Ts_IMU = [0, *np.diff(timeIMU)]
+
 
 # %% Initialise
 x_pred[0, POS_IDX] = z_GNSS[0,:] # Using first GPS-measurement
-x_pred[0, VEL_IDX] = np.array([0, 0, 0]) # starting at 20 m/s due north
+x_pred[0, VEL_IDX] = np.array([0, 0, 0])
 x_pred[0, ATT_IDX] = np.array([
     np.cos(45 * np.pi / 180),
     0, 0,
@@ -179,11 +177,10 @@ P_pred[0][ERR_GYRO_BIAS_IDX**2] = (1e-3)**2 * np.eye(3)
 
 N = 75000 #steps
 GNSSk = 0
-taylor_approx_degree = 2 # The order of the taylor approximation to be done in discretizing the error-state matrices
 
 for k in tqdm(range(N)):
     if timeIMU[k] >= timeGNSS[GNSSk]:
-        R_GNSS = 0.1*np.diag([1, 1, 1]) * accuracy_GNSS[GNSSk] # TODO: Current GNSS covariance
+        R_GNSS = np.eye(3) * 0.1 * accuracy_GNSS[GNSSk] # TODO: Current GNSS covariance
         NIS[GNSSk] = eskf.NIS_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)# TODO
 
         x_est[k], P_est[k] = eskf.update_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)# TODO
@@ -194,10 +191,10 @@ for k in tqdm(range(N)):
     else:
         # no updates, so estimate = prediction
         x_est[k] = x_pred[k] # TODO
-        P_est[k] = P_pred[k]# TODO
+        P_est[k] = P_pred[k] # TODO
 
     if k < N - 1:
-        x_pred[k + 1], P_pred[k + 1] = eskf.predict(x_est[k], P_pred[k], z_acceleration[k + 1], z_gyroscope[k + 1], taylor_approx_degree, Ts_IMU[k + 1])# TODO
+        x_pred[k + 1], P_pred[k + 1] = eskf.predict(x_est[k], P_est[k], z_acceleration[k + 1], z_gyroscope[k + 1], 2, Ts_IMU[k + 1])# TODO
 
     if eskf.debug:
         assert np.all(np.isfinite(P_pred[k])), f"Not finite P_pred at index {k + 1}"
@@ -205,97 +202,72 @@ for k in tqdm(range(N)):
 
 # %% Plots
 
-do_plotting = True
+fig1 = plt.figure(1, figsize=(10, 10))
+ax = plt.axes(projection='3d')
 
-# fig1, axs1 = plt.subplots(1, 3, num=1, clear=True)
+ax.plot3D(x_est[0:N, 1], x_est[0:N, 0], -x_est[0:N, 2])
+ax.plot3D(z_GNSS[0:GNSSk, 1], z_GNSS[0:GNSSk, 0], -z_GNSS[0:GNSSk, 2])
+ax.set_xlabel('East [m]')
+ax.set_ylabel('North [m]')
+ax.set_zlabel('Altitude [m]')
+ax.legend(["Estimated", "GNSS"])
 
-# axs1[0].plot(x_est[0:N, 1], x_est[0:N, 0], label=r"$\hat{x}$")
-# axs1[0].plot(z_GNSS[0:GNSSk, 1], z_GNSS[0:GNSSk, 0], label="GNSS")
-# axs1[0].set_xlabel("East[m]")
-# axs1[0].set_ylabel("North[m]")
+plt.grid()
 
-# axs1[1].plot(x_est[0:N, 1], -x_est[0:N, 2], label=r"$\hat{x}$")
-# axs1[1].plot(z_GNSS[0:GNSSk, 1], -z_GNSS[0:GNSSk, 2], label="GNSS")
-# axs1[1].set_xlabel("East[m]")
-# axs1[1].set_ylabel("Down[m]")
+# state estimation
+t = np.linspace(0, dt*(N-1), N)
+eul = np.apply_along_axis(quaternion_to_euler, 1, x_est[:N, ATT_IDX])
 
-# axs1[2].plot(x_est[0:N, 0], -x_est[0:N, 2], label=r"$\hat{x}$")
-# axs1[2].plot(z_GNSS[0:GNSSk, 0], -z_GNSS[0:GNSSk, 2], label="GNSS")
-# axs1[2].set_xlabel("North[m]")
-# axs1[2].set_ylabel("Down[m]")
+fig2, axs2 = plt.subplots(5, 1, figsize=(10, 10))
 
-# axs1[0].legend()
-# axs1[1].legend()
-# axs1[2].legend()
+axs2[0].plot(t, x_est[0:N, POS_IDX])
+axs2[0].set(ylabel='NED position [m]')
+axs2[0].legend(['North', 'East', 'Down'])
+plt.grid()
 
-# plt.show()
+axs2[1].plot(t, x_est[0:N, VEL_IDX])
+axs2[1].set(ylabel='Velocities [m/s]')
+axs2[1].legend(['North', 'East', 'Down'])
+plt.grid()
 
-if do_plotting:
+axs2[2].plot(t, eul[0:N] * 180 / np.pi)
+axs2[2].set(ylabel='Euler angles [deg]')
+axs2[2].legend(['\phi', '\theta', '\psi'])
+plt.grid()
 
-    fig1 = plt.figure(1)
-    ax = plt.axes(projection='3d')
+axs2[3].plot(t, x_est[0:N, ACC_BIAS_IDX])
+axs2[3].set(ylabel='Accl bias [m/s^2]')
+axs2[3].legend(['x', 'y', 'z'])
+plt.grid()
 
-    ax.plot3D(x_est[0:N, 1], x_est[0:N, 0], -x_est[0:N, 2], label=r"$\hat{x}$")
-    ax.plot3D(z_GNSS[0:GNSSk, 1], z_GNSS[0:GNSSk, 0], -z_GNSS[0:GNSSk, 2], label="GNSS")
-    ax.set_xlabel('East [m]')
-    ax.set_xlabel('North [m]')
-    ax.set_xlabel('Altitude [m]')
-    ax.legend()
+axs2[4].plot(t, x_est[0:N, GYRO_BIAS_IDX] * 180 / np.pi * 3600)
+axs2[4].set(ylabel='Gyro bias [deg/h]')
+axs2[4].legend(['x', 'y', 'z'])
+plt.grid()
 
-    plt.grid()
+fig2.suptitle('States estimates')
 
-    # state estimation
-    t = np.linspace(0, dt*(N-1), N)
-    eul = np.apply_along_axis(quaternion_to_euler, 1, x_est[:N, ATT_IDX])
 
-    fig2, axs2 = plt.subplots(5, 1)
+# %% Consistency
+confprob = 0.95
+CI3 = np.array(scipy.stats.chi2.interval(confprob, 3)).reshape((2, 1))
 
-    axs2[0].plot(t, x_est[0:N, POS_IDX])
-    axs2[0].set(ylabel='NED position [m]')
-    axs2[0].legend(['North', 'East', 'Down'])
-    plt.grid()
+fig3 = plt.figure(figsize=(10, 10))
 
-    axs2[1].plot(t, x_est[0:N, VEL_IDX])
-    axs2[1].set(ylabel='Velocities [m/s]')
-    axs2[1].legend(['North', 'East', 'Down'])
-    plt.grid()
+plt.plot(NIS[:GNSSk])
+plt.plot(np.array([0, N-1]) * dt, (CI3@np.ones((1, 2))).T)
+insideCI = np.mean((CI3[0] <= NIS[:N]) * (NIS[:N] <= CI3[1]))
+plt.title(f'NIS ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)')
+plt.grid()
 
-    axs2[2].plot(t, eul[0:N] * 180 / np.pi)
-    axs2[2].set(ylabel='Euler angles [deg]')
-    axs2[2].legend(['\phi', '\theta', '\psi'])
-    plt.grid()
 
-    axs2[3].plot(t, x_est[0:N, ACC_BIAS_IDX])
-    axs2[3].set(ylabel='Accl bias [m/s^2]')
-    axs2[3].legend(['x', 'y', 'z'])
-    plt.grid()
+# %% box plots
+fig4 = plt.figure(figsize=(10, 10))
 
-    axs2[4].plot(t, x_est[0:N, GYRO_BIAS_IDX] * 180 / np.pi * 3600)
-    axs2[4].set(ylabel='Gyro bias [deg/h]')
-    axs2[4].legend(['x', 'y', 'z'])
-    plt.grid()
+gauss_compare = np.sum(np.random.randn(3, GNSSk)**2, axis=0)
+plt.boxplot([NIS[0:GNSSk], gauss_compare], notch=True)
+plt.legend('NIS', 'gauss')
+plt.grid()
 
-    fig2.suptitle('States estimates')
-
-    # %% Consistency
-    confprob = 0.95
-    CI3 = np.array(scipy.stats.chi2.interval(confprob, 3)).reshape((2, 1))
-
-    fig3 = plt.figure()
-
-    plt.plot(NIS[:GNSSk])
-    plt.plot(np.array([0, N-1]) * dt, (CI3@np.ones((1, 2))).T)
-    insideCI = np.mean((CI3[0] <= NIS[:GNSSk]) * (NIS[:GNSSk] <= CI3[1]))
-    plt.title(f'NIS ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)')
-    plt.grid()
-
-    # %% box plots
-    fig4 = plt.figure()
-
-    gauss_compare = np.sum(np.random.randn(3, GNSSk)**2, axis=0)
-    plt.boxplot([NIS[0:GNSSk], gauss_compare], notch=True)
-    plt.legend('NIS', 'gauss')
-    plt.grid()
-
-    plt.show()
 # %%
+plt.show()
