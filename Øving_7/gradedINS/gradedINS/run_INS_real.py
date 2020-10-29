@@ -120,11 +120,11 @@ cont_gyro_noise_std = 4.36e-5  # (rad/s)/sqrt(Hz)
 cont_acc_noise_std = 1.167e-3  # (m/s**2)/sqrt(Hz)
 
 # Discrete sample noise at simulation rate used
-rate_std = cont_gyro_noise_std / np.sqrt(dt)
-acc_std = cont_acc_noise_std / np.sqrt(dt)
+rate_std = 0.5 * cont_gyro_noise_std / np.sqrt(dt)
+acc_std = 0.5 * cont_acc_noise_std / np.sqrt(dt)
 
 # Bias values
-rate_bias_driving_noise_std = 5e-5
+rate_bias_driving_noise_std = 5e-4
 cont_rate_bias_driving_noise_std = (
     (1 / 3) * rate_bias_driving_noise_std / np.sqrt(1 / dt)
 )
@@ -177,7 +177,7 @@ P_pred[0][ERR_GYRO_BIAS_IDX**2] = (1e-3)**2 * np.eye(3)
 
 # %% Run estimation
 
-N = 75000 #steps
+N = steps #steps
 GNSSk = 0
 taylor_approx_degree = 2 # The order of the taylor approximation to be done in discretizing the error-state matrices
 
@@ -249,7 +249,7 @@ if do_plotting:
 
     axs2[4].plot(t, x_est[0:N, GYRO_BIAS_IDX] * 180 / np.pi * 3600)
     axs2[4].set(ylabel='Gyro bias [deg/h]')
-    axs2[4].legend(['x', 'y', 'z'])
+    axs2[4].legend(['p', 'q', 'r'])
     plt.grid()
 
     fig2.suptitle('States estimates')
@@ -257,6 +257,11 @@ if do_plotting:
     # %% Consistency
     confprob = 0.95
     CI3 = np.array(scipy.stats.chi2.interval(confprob, 3)).reshape((2, 1))
+    CI3_GNNSk = np.array(scipy.stats.chi2.interval(confprob, 3 * GNSSk)) / GNSSk
+
+    ANIS = np.mean(NIS[:GNSSk])
+
+    print(f"ANIS = {ANIS:.2f} with CI = [{CI3_GNNSk[0]:.2f}, {CI3_GNNSk[1]:.2f}]")
 
     fig3 = plt.figure()
 

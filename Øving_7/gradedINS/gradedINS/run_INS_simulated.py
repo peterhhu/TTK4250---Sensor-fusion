@@ -176,6 +176,8 @@ x_pred[0, ACC_BIAS_IDX + GYRO_BIAS_IDX] = x_true[0, ACC_BIAS_IDX + GYRO_BIAS_IDX
 
 # These have to be set reasonably to get good results
 
+# P_pred[0] = np.eye(15) * 0.000000001
+
 P_pred[0][POS_IDX ** 2] = 0.2 ** 2 * np.eye(3)# TODO
 P_pred[0][VEL_IDX ** 2] = 0.04 ** 2 * np.eye(3)# TODO
 P_pred[0][ERR_ATT_IDX ** 2] = 0.01 ** 2 * np.eye(3)# TODO # error rotation vector (not quat)
