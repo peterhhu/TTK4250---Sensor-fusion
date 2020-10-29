@@ -207,29 +207,6 @@ for k in tqdm(range(N)):
 
 do_plotting = True
 
-# fig1, axs1 = plt.subplots(1, 3, num=1, clear=True)
-
-# axs1[0].plot(x_est[0:N, 1], x_est[0:N, 0], label=r"$\hat{x}$")
-# axs1[0].plot(z_GNSS[0:GNSSk, 1], z_GNSS[0:GNSSk, 0], label="GNSS")
-# axs1[0].set_xlabel("East[m]")
-# axs1[0].set_ylabel("North[m]")
-
-# axs1[1].plot(x_est[0:N, 1], -x_est[0:N, 2], label=r"$\hat{x}$")
-# axs1[1].plot(z_GNSS[0:GNSSk, 1], -z_GNSS[0:GNSSk, 2], label="GNSS")
-# axs1[1].set_xlabel("East[m]")
-# axs1[1].set_ylabel("Down[m]")
-
-# axs1[2].plot(x_est[0:N, 0], -x_est[0:N, 2], label=r"$\hat{x}$")
-# axs1[2].plot(z_GNSS[0:GNSSk, 0], -z_GNSS[0:GNSSk, 2], label="GNSS")
-# axs1[2].set_xlabel("North[m]")
-# axs1[2].set_ylabel("Down[m]")
-
-# axs1[0].legend()
-# axs1[1].legend()
-# axs1[2].legend()
-
-# plt.show()
-
 if do_plotting:
 
     fig1 = plt.figure(1)
