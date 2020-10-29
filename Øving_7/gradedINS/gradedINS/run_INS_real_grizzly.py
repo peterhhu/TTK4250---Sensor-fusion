@@ -1,3 +1,4 @@
+# %% imports
 import scipy
 import scipy.io
 import scipy.stats
@@ -158,6 +159,7 @@ NIS = np.zeros(gnss_steps)
 Ts_IMU = [0, *np.diff(timeIMU)]
 
 
+
 # %% Initialise
 x_pred[0, POS_IDX] = z_GNSS[0,:] # Using first GPS-measurement
 x_pred[0, VEL_IDX] = np.array([0, 0, 0])
@@ -177,6 +179,7 @@ P_pred[0][ERR_GYRO_BIAS_IDX**2] = (1e-3)**2 * np.eye(3)
 
 N = 75000 #steps
 GNSSk = 0
+
 
 for k in tqdm(range(N)):
     if timeIMU[k] >= timeGNSS[GNSSk]:

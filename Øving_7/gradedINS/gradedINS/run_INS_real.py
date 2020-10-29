@@ -183,7 +183,7 @@ taylor_approx_degree = 2 # The order of the taylor approximation to be done in d
 
 for k in tqdm(range(N)):
     if timeIMU[k] >= timeGNSS[GNSSk]:
-        R_GNSS = 0.1*np.diag([1, 1, 1]) * accuracy_GNSS[GNSSk] # TODO: Current GNSS covariance
+        R_GNSS = 0.1 * np.diag([1, 1, 1]) * accuracy_GNSS[GNSSk] # TODO: Current GNSS covariance
         NIS[GNSSk] = eskf.NIS_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)# TODO
 
         x_est[k], P_est[k] = eskf.update_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)# TODO
@@ -197,7 +197,7 @@ for k in tqdm(range(N)):
         P_est[k] = P_pred[k]# TODO
 
     if k < N - 1:
-        x_pred[k + 1], P_pred[k + 1] = eskf.predict(x_est[k], P_pred[k], z_acceleration[k + 1], z_gyroscope[k + 1], taylor_approx_degree, Ts_IMU[k + 1])# TODO
+        x_pred[k + 1], P_pred[k + 1] = eskf.predict(x_est[k], P_est[k], z_acceleration[k + 1], z_gyroscope[k + 1], taylor_approx_degree, Ts_IMU[k + 1])# TODO
 
     if eskf.debug:
         assert np.all(np.isfinite(P_pred[k])), f"Not finite P_pred at index {k + 1}"
