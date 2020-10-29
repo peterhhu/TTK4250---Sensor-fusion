@@ -159,6 +159,8 @@ P_pred = np.zeros((steps, 15, 15))
 delta_x = np.zeros((steps, 15))
 
 NIS = np.zeros(gnss_steps)
+NIS_z = np.zeros(gnss_steps)
+NIS_xy = np.zeros(gnss_steps)
 
 NEES_all = np.zeros(steps)
 NEES_pos = np.zeros(steps)
@@ -187,7 +189,7 @@ P_pred[0][ERR_GYRO_BIAS_IDX ** 2] = 0.001 * np.eye(3)# TODO
 # %% Run estimation
 # run this file with 'python -O run_INS_simulated.py' to turn of assertions and get about 8/5 speed increase for longer runs
 
-N: int = steps # TODO: choose a small value to begin with (500?), and gradually increase as you OK results
+N: int = 90000 # TODO: choose a small value to begin with (500?), and gradually increase as you OK results
 doGNSS: bool = True  # TODO: Set this to False if you want to check that the predictions make sense over reasonable time lenghts
 
 GNSSk: int = 0  # keep track of current step in GNSS measurements
@@ -195,7 +197,7 @@ taylor_approx_degree = 2 # The order of the taylor approximation to be done in d
 
 for k in tqdm(range(N)):
     if doGNSS and timeIMU[k] >= timeGNSS[GNSSk]:
-        NIS[GNSSk] = eskf.NIS_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)
+        NIS[GNSSk], NIS_xy[GNSSk], NIS_z[GNSSk]= eskf.NIS_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)
 
         x_est[k], P_est[k] = eskf.update_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)
         assert np.all(np.isfinite(P_est[k])), f"Not finite P_pred at index {k}"
@@ -358,6 +360,8 @@ if do_plotting:
     confprob = 0.95
     CI15 = np.array(scipy.stats.chi2.interval(confprob, 15)).reshape((2, 1))
     CI3 = np.array(scipy.stats.chi2.interval(confprob, 3)).reshape((2, 1))
+    CI2 = np.array(scipy.stats.chi2.interval(confprob, 2)).reshape((2, 1))
+    CI1 = np.array(scipy.stats.chi2.interval(confprob, 1)).reshape((2, 1))
 
     CI15_N = np.array(scipy.stats.chi2.interval(confprob, 15 * N)) / N
     CI3_N = np.array(scipy.stats.chi2.interval(confprob, 3 * N)) / N
@@ -440,23 +444,53 @@ if do_plotting:
     )
     axs5[6].set_ylim([0, 20])
 
+
+    #Planar and regular NISes 
+    fig6, axs6 = plt.subplots(3, 1, num=6, clear=True)
+
+    axs6[0].plot(NIS[:GNSSk])
+    axs6[0].plot(np.array([0, N - 1]) * dt, (CI3 @ np.ones((1, 2))).T)
+    insideCI = np.mean((CI3[0] <= NIS[:GNSSk]) * (NIS[:GNSSk] <= CI3[1]))
+    axs6[0].set(
+        title=f"NIS ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)"
+    )
+    axs6[0].set_ylim([0, 20])
+
+    axs6[1].plot(NIS_xy[:GNSSk])
+    axs6[1].plot(np.array([0, N - 1]) * dt, (CI2 @ np.ones((1, 2))).T)
+    insideCI = np.mean((CI2[0] <= NIS_xy[:GNSSk]) * (NIS_xy[:GNSSk] <= CI2[1]))
+    axs6[1].set(
+        title=f"NIS_xy ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)"
+    )
+    axs6[1].set_ylim([0, 20])
+
+    axs6[2].plot(NIS_z[:GNSSk])
+    axs6[2].plot(np.array([0, N - 1]) * dt, (CI1 @ np.ones((1, 2))).T)
+    insideCI = np.mean((CI1[0] <= NIS_z[:GNSSk]) * (NIS_z[:GNSSk] <= CI1[1]))
+    axs6[2].set(
+        title=f"NIS_z ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)"
+    )
+    axs6[2].set_ylim([0, 20])
+
+
+
     # boxplot
-    fig6, axs6 = plt.subplots(1, 3)
+    # fig6, axs6 = plt.subplots(1, 3)
 
-    gauss_compare = np.sum(np.random.randn(3, GNSSk)**2, axis=0)
-    axs6[0].boxplot([NIS[0:GNSSk], gauss_compare], notch=True)
-    axs6[0].legend(['NIS', 'gauss'])
-    plt.grid()
+    # gauss_compare = np.sum(np.random.randn(3, GNSSk)**2, axis=0)
+    # axs6[0].boxplot([NIS[0:GNSSk], gauss_compare], notch=True)
+    # axs6[0].legend(['NIS', 'gauss'])
+    # plt.grid()
 
-    gauss_compare_15 = np.sum(np.random.randn(15, N)**2, axis=0)
-    axs6[1].boxplot([NEES_all[0:N].T, gauss_compare_15], notch=True)
-    axs6[1].legend(['NEES', 'gauss (15 dim)'])
-    plt.grid()
+    # gauss_compare_15 = np.sum(np.random.randn(15, N)**2, axis=0)
+    # axs6[1].boxplot([NEES_all[0:N].T, gauss_compare_15], notch=True)
+    # axs6[1].legend(['NEES', 'gauss (15 dim)'])
+    # plt.grid()
 
-    gauss_compare_3  = np.sum(np.random.randn(3, N)**2, axis=0)
-    axs6[2].boxplot([NEES_pos[0:N].T, NEES_vel[0:N].T, NEES_att[0:N].T, NEES_accbias[0:N].T, NEES_gyrobias[0:N].T, gauss_compare_3], notch=True)
-    axs6[2].legend(['NEES pos', 'NEES vel', 'NEES att', 'NEES accbias', 'NEES gyrobias', 'gauss (3 dim)'])
-    plt.grid()
+    # gauss_compare_3  = np.sum(np.random.randn(3, N)**2, axis=0)
+    # axs6[2].boxplot([NEES_pos[0:N].T, NEES_vel[0:N].T, NEES_att[0:N].T, NEES_accbias[0:N].T, NEES_gyrobias[0:N].T, gauss_compare_3], notch=True)
+    # axs6[2].legend(['NEES pos', 'NEES vel', 'NEES att', 'NEES accbias', 'NEES gyrobias', 'gauss (3 dim)'])
+    # plt.grid()
 
 
     plt.show()

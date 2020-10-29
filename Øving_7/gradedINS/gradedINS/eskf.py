@@ -622,7 +622,7 @@ class ESKF:
         z_GNSS_position: np.ndarray,
         R_GNSS: np.ndarray,
         lever_arm: np.ndarray = np.zeros(3),
-    ) -> float:
+    ) -> Tuple[float, float]:
         """Calculates the NIS for a GNSS position measurement
 
         Args:
@@ -661,9 +661,15 @@ class ESKF:
 
         NIS = v.T @ la.inv(S) @ v  # Calculate NIS
 
+        S_xy = S[0:2, 0:2]
+        S_z = S[2, 2]
+
+        NIS_xy = v[:2].T @ S_xy @ v[:2]
+        NIS_z = v[2] ** 2 * S_z  
+
         assert NIS >= 0, "EKSF.NIS_GNSS_positionNIS: NIS not positive"
 
-        return NIS
+        return NIS, NIS_xy, NIS_z
 
     @classmethod
     def delta_x(cls, x_nominal: np.ndarray, x_true: np.ndarray,) -> np.ndarray:

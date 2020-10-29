@@ -100,6 +100,9 @@ else:
     # Only accounts for basic mounting directions
     S_a = S_g = np.array([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
 
+print(f"S_a = {S_a}")
+print(f"S_g = {S_g}")
+
 lever_arm = loaded_data["leverarm"].ravel()
 timeGNSS = loaded_data["timeGNSS"].ravel()
 timeIMU = loaded_data["timeIMU"].ravel()
@@ -159,6 +162,8 @@ x_pred = np.zeros((steps, 16))
 P_pred = np.zeros((steps, 15, 15))
 
 NIS = np.zeros(gnss_steps)
+NIS_xy = np.zeros(gnss_steps)
+NIS_z = np.zeros(gnss_steps)
 
 # %% Initialise
 x_pred[0, POS_IDX] = z_GNSS[0,:] # Using first GPS-measurement
@@ -177,14 +182,14 @@ P_pred[0][ERR_GYRO_BIAS_IDX**2] = (1e-3)**2 * np.eye(3)
 
 # %% Run estimation
 
-N = steps #steps
+N = 500 #steps
 GNSSk = 0
 taylor_approx_degree = 2 # The order of the taylor approximation to be done in discretizing the error-state matrices
 
 for k in tqdm(range(N)):
     if timeIMU[k] >= timeGNSS[GNSSk]:
         R_GNSS = 0.1 * np.diag([1, 1, 1]) * accuracy_GNSS[GNSSk] # TODO: Current GNSS covariance
-        NIS[GNSSk] = eskf.NIS_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)# TODO
+        NIS[GNSSk], NIS_xy[GNSSk], NIS_z[GNSSk] = eskf.NIS_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)# TODO
 
         x_est[k], P_est[k] = eskf.update_GNSS_position(x_pred[k], P_pred[k], z_GNSS[GNSSk], R_GNSS, lever_arm=lever_arm)# TODO
         if eskf.debug:
@@ -225,7 +230,7 @@ if do_plotting:
     t = np.linspace(0, dt*(N-1), N)
     eul = np.apply_along_axis(quaternion_to_euler, 1, x_est[:N, ATT_IDX])
 
-    fig2, axs2 = plt.subplots(5, 1)
+    fig2, axs2 = plt.subplots(5, 1, num=2, clear=True)
 
     axs2[0].plot(t, x_est[0:N, POS_IDX])
     axs2[0].set(ylabel='NED position [m]')
@@ -239,7 +244,7 @@ if do_plotting:
 
     axs2[2].plot(t, eul[0:N] * 180 / np.pi)
     axs2[2].set(ylabel='Euler angles [deg]')
-    axs2[2].legend(['\phi', '\theta', '\psi'])
+    axs2[2].legend([r"$\phi$", r"$\theta$", r"$\psi$"])
     plt.grid()
 
     axs2[3].plot(t, x_est[0:N, ACC_BIAS_IDX])
@@ -257,6 +262,8 @@ if do_plotting:
     # %% Consistency
     confprob = 0.95
     CI3 = np.array(scipy.stats.chi2.interval(confprob, 3)).reshape((2, 1))
+    CI2 = np.array(scipy.stats.chi2.interval(confprob, 2)).reshape((2, 1))
+    CI1 = np.array(scipy.stats.chi2.interval(confprob, 1)).reshape((2, 1))
     CI3_GNNSk = np.array(scipy.stats.chi2.interval(confprob, 3 * GNSSk)) / GNSSk
 
     ANIS = np.mean(NIS[:GNSSk])
@@ -271,13 +278,40 @@ if do_plotting:
     plt.title(f'NIS ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)')
     plt.grid()
 
-    # %% box plots
-    fig4 = plt.figure()
+    #Planar and regular NISes
+    fig4, axs4 = plt.subplots(3, 1, num=4, clear=True)
 
-    gauss_compare = np.sum(np.random.randn(3, GNSSk)**2, axis=0)
-    plt.boxplot([NIS[0:GNSSk], gauss_compare], notch=True)
-    plt.legend('NIS', 'gauss')
-    plt.grid()
+    axs4[0].plot(NIS[:GNSSk])
+    axs4[0].plot(np.array([0, N - 1]) * dt, (CI3 @ np.ones((1, 2))).T)
+    insideCI = np.mean((CI3[0] <= NIS[:GNSSk]) * (NIS[:GNSSk] <= CI3[1]))
+    axs4[0].set(
+        title=f"NIS ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)"
+    )
+    axs4[0].set_ylim([0, 20])
+
+    axs4[1].plot(NIS_xy[:GNSSk])
+    axs4[1].plot(np.array([0, N - 1]) * dt, (CI2 @ np.ones((1, 2))).T)
+    insideCI = np.mean((CI2[0] <= NIS_xy[:GNSSk]) * (NIS_xy[:GNSSk] <= CI2[1]))
+    axs4[1].set(
+        title=f"NIS_xy ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)"
+    )
+    axs4[1].set_ylim([0, 20])
+
+    axs4[2].plot(NIS_z[:GNSSk])
+    axs4[2].plot(np.array([0, N - 1]) * dt, (CI1 @ np.ones((1, 2))).T)
+    insideCI = np.mean((CI1[0] <= NIS_z[:GNSSk]) * (NIS_z[:GNSSk] <= CI1[1]))
+    axs4[2].set(
+        title=f"NIS_z ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)"
+    )
+    axs4[2].set_ylim([0, 20])
+
+    # %% box plots
+    # fig4 = plt.figure()
+
+    # gauss_compare = np.sum(np.random.randn(3, GNSSk)**2, axis=0)
+    # plt.boxplot([NIS[0:GNSSk], gauss_compare], notch=True)
+    # plt.legend('NIS', 'gauss')
+    # plt.grid()
 
     plt.show()
 # %%
