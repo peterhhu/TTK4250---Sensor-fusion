@@ -136,6 +136,11 @@ p_acc = 1e-16
 
 p_gyro = 1e-16
 
+
+#S_a_no_corr = np.eye(3)
+#S_g_no_corr = np.eye(3)
+
+
 # %% Estimator
 eskf = ESKF(
     acc_std,
@@ -189,7 +194,7 @@ P_pred[0][ERR_GYRO_BIAS_IDX ** 2] = 0.001 * np.eye(3)# TODO
 # %% Run estimation
 # run this file with 'python -O run_INS_simulated.py' to turn of assertions and get about 8/5 speed increase for longer runs
 
-N: int = 90000 # TODO: choose a small value to begin with (500?), and gradually increase as you OK results
+N: int = steps # TODO: choose a small value to begin with (500?), and gradually increase as you OK results
 doGNSS: bool = True  # TODO: Set this to False if you want to check that the predictions make sense over reasonable time lenghts
 
 GNSSk: int = 0  # keep track of current step in GNSS measurements
@@ -228,10 +233,12 @@ for k in tqdm(range(N)):
 
 # %% Plots
 do_plotting = True
+plot_save_path = "./plots/simulated/Uncorrected/"
+save_plots : bool = True
 
 if do_plotting:
 
-    fig1 = plt.figure(1)
+    fig1 = plt.figure(1, figsize=(10,10))
     ax = plt.axes(projection="3d")
 
     ax.plot3D(x_est[:N, 1], x_est[:N, 0], -x_est[:N, 2], label=r"$\hat{x}$")
@@ -240,7 +247,10 @@ if do_plotting:
     ax.set_xlabel("East [m]")
     ax.set_ylabel("North [m]")
     ax.set_zlabel("Altitude [m]")
-    ax.legend()
+    ax.legend(loc='upper right')
+
+    if save_plots:
+        plt.savefig(plot_save_path + "traj_simulated.pdf", format="pdf")
 
 
     # state estimation
@@ -248,112 +258,127 @@ if do_plotting:
     eul = np.apply_along_axis(quaternion_to_euler, 1, x_est[:N, ATT_IDX])
     eul_true = np.apply_along_axis(quaternion_to_euler, 1, x_true[:N, ATT_IDX])
 
-    fig2, axs2 = plt.subplots(5, 1, num=2, clear=True)
+    fig2, axs2 = plt.subplots(5, 1, num=2, figsize=(10,10), clear=True)
 
     axs2[0].plot(t, x_est[:N, POS_IDX])
-    axs2[0].set(ylabel="NED position [m]")
-    axs2[0].legend(["North", "East", "Down"])
+    axs2[0].set_ylabel("NED pos.[m]", fontsize=10)
+    axs2[0].legend(["North", "East", "Down"], loc='upper right')
 
 
     axs2[1].plot(t, x_est[:N, VEL_IDX])
-    axs2[1].set(ylabel="Velocities [m/s]")
-    axs2[1].legend(["North", "East", "Down"])
+    axs2[1].set_ylabel("Vel.[m/s]", fontsize=10)
+    axs2[1].legend(["North", "East", "Down"], loc='upper right')
 
 
     axs2[2].plot(t, eul[:N] * 180 / np.pi)
-    axs2[2].set(ylabel="Euler angles [deg]")
-    axs2[2].legend([r"$\phi$", r"$\theta$", r"$\psi$"])
+    axs2[2].set_ylabel("Eul. angl.[deg]", fontsize=10)
+    axs2[2].legend([r"$\phi$", r"$\theta$", r"$\psi$"], loc='upper right')
 
 
     axs2[3].plot(t, x_est[:N, ACC_BIAS_IDX])
-    axs2[3].set(ylabel="Accl bias [m/s^2]")
-    axs2[3].legend(["$x$", "$y$", "$z$"])
+    axs2[3].set_ylabel("Accl. bias [m/s^2]", fontsize=10)
+    axs2[3].legend(["$x$", "$y$", "$z$"], loc='upper right')
 
 
     axs2[4].plot(t, x_est[:N, GYRO_BIAS_IDX] * 180 / np.pi * 3600)
-    axs2[4].set(ylabel="Gyro bias [deg/h]")
-    axs2[4].legend(["$p$", "$q$", "$r$"])
+    axs2[4].set_ylabel("Gyro bias [deg/h]", fontsize=10)
+    axs2[4].legend(["$p$", "$q$", "$r$"], loc='upper right')
 
 
-    fig2.suptitle("States estimates")
+    fig2.suptitle("States estimates", fontsize=14)
+
+    if save_plots:
+        plt.savefig(plot_save_path + "state_estimates_simulated.pdf", format="pdf")
 
     # state error plots
-    fig3, axs3 = plt.subplots(5, 1, num=3, clear=True)
+    fig3, axs3 = plt.subplots(5, 1, num=3, figsize=(10,10), clear=True)
     delta_x_RMSE = np.sqrt(np.mean(delta_x[:N] ** 2, axis=0))  # TODO use this in legends
     axs3[0].plot(t, delta_x[:N, POS_IDX])
-    axs3[0].set(ylabel="NED position error [m]")
+    axs3[0].set_ylabel("NED pos. err.[m]", fontsize=10)
     axs3[0].legend(
         [
             f"North ({np.sqrt(np.mean(delta_x[:N, 0]**2)):.4f})",
             f"East ({np.sqrt(np.mean(delta_x[:N, 1]**2)):.4f})",
             f"Down ({np.sqrt(np.mean(delta_x[:N, 2]**2)):.4f})",
-        ]
+        ],
+        loc='upper right'
     )
 
     axs3[1].plot(t, delta_x[:N, VEL_IDX])
-    axs3[1].set(ylabel="Velocities error [m]")
+    axs3[1].set_ylabel("Vel. err.[m/s]", fontsize=10)
     axs3[1].legend(
         [
             f"North ({np.sqrt(np.mean(delta_x[:N, 3]**2)):.4f})",
             f"East ({np.sqrt(np.mean(delta_x[:N, 4]**2)):.4f})",
             f"Down ({np.sqrt(np.mean(delta_x[:N, 5]**2)):.4f})",
-        ]
+        ],
+        loc='upper right'
     )
 
     # quick wrap func
     wrap_to_pi = lambda rads: (rads + np.pi) % (2 * np.pi) - np.pi
     eul_error = wrap_to_pi(eul[:N] - eul_true[:N])
     axs3[2].plot(t, eul_error)
-    axs3[2].set(ylabel="Euler angles error [deg]")
+    axs3[2].set_ylabel("Eul. angl. err.[deg]", fontsize=10)
     axs3[2].legend(
         [
             rf"$\phi$ ({np.sqrt(np.mean((eul_error[:N, 0] * 180 / np.pi)**2)):.4f})",
             rf"$\theta$ ({np.sqrt(np.mean((eul_error[:N, 1] * 180 / np.pi)**2)):.4f})",
             rf"$\psi$ ({np.sqrt(np.mean((eul_error[:N, 2] * 180 / np.pi)**2)):.4f})",
-        ]
+        ], 
+        loc='upper right'
     )
 
     axs3[3].plot(t, delta_x[:N, ERR_ACC_BIAS_IDX])
-    axs3[3].set(ylabel="Accl bias error [m/s^2]")
+    axs3[3].set_ylabel("Accl. bias err.[m/s^2]", fontsize=10)
     axs3[3].legend(
         [
             f"$x$ ({np.sqrt(np.mean(delta_x[:N, 9]**2)):.4f})",
             f"$y$ ({np.sqrt(np.mean(delta_x[:N, 10]**2)):.4f})",
             f"$z$ ({np.sqrt(np.mean(delta_x[:N, 11]**2)):.4f})",
-        ]
+        ],
+        loc='upper right'
     )
 
     axs3[4].plot(t, delta_x[:N, ERR_GYRO_BIAS_IDX] * 180 / np.pi)
-    axs3[4].set(ylabel="Gyro bias error [deg/s]")
+    axs3[4].set_ylabel("Gyro bias err.[deg/s]", fontsize=10)
     axs3[4].legend(
         [
             f"$p$ ({np.sqrt(np.mean((delta_x[:N, 12]* 180 / np.pi)**2)):.4f})",
             f"$q$ ({np.sqrt(np.mean((delta_x[:N, 13]* 180 / np.pi)**2)):.4f})",
             f"$r$ ({np.sqrt(np.mean((delta_x[:N, 14]* 180 / np.pi)**2)):.4f})",
-        ]
+        ],
+        loc='upper right'
     )
 
-    fig3.suptitle("States estimate errors")
+    fig3.suptitle("States estimate errors", fontsize=14)
+
+    if save_plots:
+        plt.savefig(plot_save_path + "state_estimates_error_simulated.pdf", format="pdf")
 
     # Error distance plot
-    fig4, axs4 = plt.subplots(2, 1, num=4, clear=True)
+    fig4, axs4 = plt.subplots(2, 1, num=4, figsize=(10,10), clear=True)
 
     axs4[0].plot(t, np.linalg.norm(delta_x[:N, POS_IDX], axis=1))
     axs4[0].plot(
         np.arange(0, N, 100) * dt,
         np.linalg.norm(x_true[99:N:100, POS_IDX] - z_GNSS[:GNSSk], axis=1),
     )
-    axs4[0].set(ylabel="Position error [m]")
+    axs4[0].set_ylabel("Position error [m]", fontsize=10)
     axs4[0].legend(
         [
             f"Estimation error ({np.sqrt(np.mean(np.sum(delta_x[:N, POS_IDX]**2, axis=1))):.4f})",
             f"Measurement error ({np.sqrt(np.mean(np.sum((x_true[99:N:100, POS_IDX] - z_GNSS[:GNSSk])**2, axis=1))):.4f})",
-        ]
+        ],
+        loc='upper right'
     )
 
     axs4[1].plot(t, np.linalg.norm(delta_x[:N, VEL_IDX], axis=1))
-    axs4[1].set(ylabel="Speed error [m/s]")
-    axs4[1].legend([f"RMSE: {np.sqrt(np.mean(np.sum(delta_x[:N, VEL_IDX]**2, axis=1))):.4f}"])
+    axs4[1].set_ylabel("Speed error [m/s]", fontsize=10)
+    axs4[1].legend([f"RMSE: {np.sqrt(np.mean(np.sum(delta_x[:N, VEL_IDX]**2, axis=1))):.4f}"], loc='upper right')
+
+    if save_plots:
+        plt.savefig(plot_save_path + "Error_distance_simulated.pdf", format="pdf")
 
 
     # %% Consistency
@@ -386,7 +411,7 @@ if do_plotting:
     print(f"ANIS = {ANIS:.2f} with CI = [{CI3_GNNSk[0]:.2f}, {CI3_GNNSk[1]:.2f}]")
 
 
-    fig5, axs5 = plt.subplots(7, 1, num=5, clear=True)
+    fig5, axs5 = plt.subplots(7, 1, num=5, figsize=(10,10), clear=True)
 
     axs5[0].plot(t, (NEES_all[:N]).T)
     axs5[0].plot(np.array([0, N - 1]) * dt, (CI15 @ np.ones((1, 2))).T)
@@ -444,35 +469,31 @@ if do_plotting:
     )
     axs5[6].set_ylim([0, 20])
 
+    if save_plots:
+        plt.savefig(plot_save_path + "NIS_NEESes_simulated.pdf", format="pdf")
+
 
     #Planar and regular NISes 
-    fig6, axs6 = plt.subplots(3, 1, num=6, clear=True)
+    fig6, axs6 = plt.subplots(2, 1, num=6, figsize=(10,10), clear=True)
 
-    axs6[0].plot(NIS[:GNSSk])
-    axs6[0].plot(np.array([0, N - 1]) * dt, (CI3 @ np.ones((1, 2))).T)
-    insideCI = np.mean((CI3[0] <= NIS[:GNSSk]) * (NIS[:GNSSk] <= CI3[1]))
+    axs6[0].plot(NIS_xy[:GNSSk])
+    axs6[0].plot(np.array([0, N - 1]) * dt, (CI2 @ np.ones((1, 2))).T)
+    insideCI = np.mean((CI2[0] <= NIS_xy[:GNSSk]) * (NIS_xy[:GNSSk] <= CI2[1]))
     axs6[0].set(
-        title=f"NIS ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)"
+        title=f"NIS_xy ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)"
     )
     axs6[0].set_ylim([0, 20])
 
-    axs6[1].plot(NIS_xy[:GNSSk])
-    axs6[1].plot(np.array([0, N - 1]) * dt, (CI2 @ np.ones((1, 2))).T)
-    insideCI = np.mean((CI2[0] <= NIS_xy[:GNSSk]) * (NIS_xy[:GNSSk] <= CI2[1]))
+    axs6[1].plot(NIS_z[:GNSSk])
+    axs6[1].plot(np.array([0, N - 1]) * dt, (CI1 @ np.ones((1, 2))).T)
+    insideCI = np.mean((CI1[0] <= NIS_z[:GNSSk]) * (NIS_z[:GNSSk] <= CI1[1]))
     axs6[1].set(
-        title=f"NIS_xy ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)"
+        title=f"NIS_z ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)"
     )
     axs6[1].set_ylim([0, 20])
 
-    axs6[2].plot(NIS_z[:GNSSk])
-    axs6[2].plot(np.array([0, N - 1]) * dt, (CI1 @ np.ones((1, 2))).T)
-    insideCI = np.mean((CI1[0] <= NIS_z[:GNSSk]) * (NIS_z[:GNSSk] <= CI1[1]))
-    axs6[2].set(
-        title=f"NIS_z ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)"
-    )
-    axs6[2].set_ylim([0, 20])
-
-
+    if save_plots:
+        plt.savefig(plot_save_path + "Planar_NISes_simulated.pdf", format="pdf")
 
     # boxplot
     # fig6, axs6 = plt.subplots(1, 3)

@@ -92,7 +92,7 @@ except Exception as e:
 filename_to_load = "task_real.mat"
 loaded_data = scipy.io.loadmat(filename_to_load)
 
-do_corrections = True # TODO: set to false for the last task
+do_corrections = False # TODO: set to false for the last task
 if do_corrections:
     S_a = loaded_data['S_a']
     S_g = loaded_data['S_g']
@@ -182,7 +182,7 @@ P_pred[0][ERR_GYRO_BIAS_IDX**2] = (1e-3)**2 * np.eye(3)
 
 # %% Run estimation
 
-N = 500 #steps
+N = steps #steps
 GNSSk = 0
 taylor_approx_degree = 2 # The order of the taylor approximation to be done in discretizing the error-state matrices
 
@@ -211,10 +211,12 @@ for k in tqdm(range(N)):
 # %% Plots
 
 do_plotting = True
+plot_save_path = "./plots/real/Corrected/"
+save_plots : bool = True
 
 if do_plotting:
 
-    fig1 = plt.figure(1)
+    fig1 = plt.figure(1, figsize=(10,10))
     ax = plt.axes(projection='3d')
 
     ax.plot3D(x_est[0:N, 1], x_est[0:N, 0], -x_est[0:N, 2], label=r"$\hat{x}$")
@@ -222,42 +224,48 @@ if do_plotting:
     ax.set_xlabel('East [m]')
     ax.set_xlabel('North [m]')
     ax.set_xlabel('Altitude [m]')
-    ax.legend()
+    ax.legend(loc='upper right')
 
     plt.grid()
+
+    if save_plots:
+        plt.savefig(plot_save_path + "traj_real.pdf", format="pdf")
 
     # state estimation
     t = np.linspace(0, dt*(N-1), N)
     eul = np.apply_along_axis(quaternion_to_euler, 1, x_est[:N, ATT_IDX])
 
-    fig2, axs2 = plt.subplots(5, 1, num=2, clear=True)
+    fig2, axs2 = plt.subplots(5, 1, num=2, figsize=(10,10), clear=True)
 
     axs2[0].plot(t, x_est[0:N, POS_IDX])
-    axs2[0].set(ylabel='NED position [m]')
-    axs2[0].legend(['North', 'East', 'Down'])
+    axs2[0].set_ylabel('NED position [m]', fontsize=10)
+    axs2[0].legend(['North', 'East', 'Down'], loc='upper right')
     plt.grid()
 
     axs2[1].plot(t, x_est[0:N, VEL_IDX])
-    axs2[1].set(ylabel='Velocities [m/s]')
-    axs2[1].legend(['North', 'East', 'Down'])
+    axs2[1].set_ylabel('Velocities [m/s]', fontsize=10)
+    axs2[1].legend(['North', 'East', 'Down'], loc='upper right')
     plt.grid()
 
     axs2[2].plot(t, eul[0:N] * 180 / np.pi)
-    axs2[2].set(ylabel='Euler angles [deg]')
-    axs2[2].legend([r"$\phi$", r"$\theta$", r"$\psi$"])
+    axs2[2].set_ylabel('Euler angles [deg]', fontsize=10)
+    axs2[2].legend([r"$\phi$", r"$\theta$", r"$\psi$"], loc='upper right')
     plt.grid()
 
     axs2[3].plot(t, x_est[0:N, ACC_BIAS_IDX])
-    axs2[3].set(ylabel='Accl bias [m/s^2]')
-    axs2[3].legend(['x', 'y', 'z'])
+    axs2[3].set_ylabel('Accl. bias [m/s^2]', fontsize=10)
+    axs2[3].legend(['x', 'y', 'z'], loc='upper right')
     plt.grid()
 
     axs2[4].plot(t, x_est[0:N, GYRO_BIAS_IDX] * 180 / np.pi * 3600)
-    axs2[4].set(ylabel='Gyro bias [deg/h]')
-    axs2[4].legend(['p', 'q', 'r'])
+    axs2[4].set_ylabel('Gyro bias [deg/h]', fontsize=10)
+    axs2[4].legend(['p', 'q', 'r'], loc='upper right')
     plt.grid()
 
-    fig2.suptitle('States estimates')
+    fig2.suptitle('States estimates', fontsize=14)
+
+    if save_plots:
+        plt.savefig(plot_save_path + "states_estimates_real.pdf", format="pdf")
 
     # %% Consistency
     confprob = 0.95
@@ -270,7 +278,7 @@ if do_plotting:
 
     print(f"ANIS = {ANIS:.2f} with CI = [{CI3_GNNSk[0]:.2f}, {CI3_GNNSk[1]:.2f}]")
 
-    fig3 = plt.figure()
+    fig3 = plt.figure(figsize=(10,10))
 
     plt.plot(NIS[:GNSSk])
     plt.plot(np.array([0, N-1]) * dt, (CI3@np.ones((1, 2))).T)
@@ -278,32 +286,30 @@ if do_plotting:
     plt.title(f'NIS ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)')
     plt.grid()
 
-    #Planar and regular NISes
-    fig4, axs4 = plt.subplots(3, 1, num=4, clear=True)
+    if save_plots:
+        plt.savefig(plot_save_path + "NIS_real.pdf", format="pdf")
 
-    axs4[0].plot(NIS[:GNSSk])
-    axs4[0].plot(np.array([0, N - 1]) * dt, (CI3 @ np.ones((1, 2))).T)
-    insideCI = np.mean((CI3[0] <= NIS[:GNSSk]) * (NIS[:GNSSk] <= CI3[1]))
+    #Planar and regular NISes
+    fig4, axs4 = plt.subplots(2, 1, figsize=(10,10), num=4, clear=True)
+
+    axs4[0].plot(NIS_xy[:GNSSk])
+    axs4[0].plot(np.array([0, N - 1]) * dt, (CI2 @ np.ones((1, 2))).T)
+    insideCI = np.mean((CI2[0] <= NIS_xy[:GNSSk]) * (NIS_xy[:GNSSk] <= CI2[1]))
     axs4[0].set(
-        title=f"NIS ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)"
+        title=f"NIS_xy ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)"
     )
     axs4[0].set_ylim([0, 20])
 
-    axs4[1].plot(NIS_xy[:GNSSk])
-    axs4[1].plot(np.array([0, N - 1]) * dt, (CI2 @ np.ones((1, 2))).T)
-    insideCI = np.mean((CI2[0] <= NIS_xy[:GNSSk]) * (NIS_xy[:GNSSk] <= CI2[1]))
+    axs4[1].plot(NIS_z[:GNSSk])
+    axs4[1].plot(np.array([0, N - 1]) * dt, (CI1 @ np.ones((1, 2))).T)
+    insideCI = np.mean((CI1[0] <= NIS_z[:GNSSk]) * (NIS_z[:GNSSk] <= CI1[1]))
     axs4[1].set(
-        title=f"NIS_xy ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)"
+        title=f"NIS_z ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)"
     )
     axs4[1].set_ylim([0, 20])
 
-    axs4[2].plot(NIS_z[:GNSSk])
-    axs4[2].plot(np.array([0, N - 1]) * dt, (CI1 @ np.ones((1, 2))).T)
-    insideCI = np.mean((CI1[0] <= NIS_z[:GNSSk]) * (NIS_z[:GNSSk] <= CI1[1]))
-    axs4[2].set(
-        title=f"NIS_z ({100 *  insideCI:.1f} inside {100 * confprob} confidence interval)"
-    )
-    axs4[2].set_ylim([0, 20])
+    if save_plots:
+        plt.savefig(plot_save_path + "Planar_NIS_real.pdf", format="pdf")
 
     # %% box plots
     # fig4 = plt.figure()
