@@ -45,9 +45,9 @@ class EKFSLAM:
             the predicted state
         """
 
-        x_pos = x[1] + u[1] * np.cos(x[3]) - u[2] * np.sin(x[3])
-        y_pos = x[1] + u[1] * np.cos(x[3]) - u[2] * np.sin(x[3])
-        yaw_angle = utils.wrapToPi(x[3] + u[3])
+        x_pos = x[0] + u[0] * np.cos(x[2]) - u[1] * np.sin(x[2])
+        y_pos = x[0] + u[0] * np.cos(x[2]) - u[1] * np.sin(x[2])
+        yaw_angle = utils.wrapToPi(x[2] + u[2])
 
         xpred = np.array([x_pos, y_pos, yaw_angle])# TODO, eq (11.7). Should wrap heading angle between (-pi, pi), see utils.wrapToPi
 
@@ -69,7 +69,9 @@ class EKFSLAM:
         np.ndarray
             The Jacobian of f wrt. x.
         """
-        Fx = # TODO, eq (11.13)
+        Fx = np.eye(3)
+        Fx[0, 2] = - u[0] * np.sin(x[2]) - u[1] * np.cos(x[2]) 
+        Fx[1, 2] = - u[0] * np.sin(x[2]) - u[1] * np.cos(x[2]) # TODO, eq (11.13)
 
         assert Fx.shape == (3, 3), "EKFSLAM.Fx: wrong shape"
         return Fx
@@ -89,7 +91,9 @@ class EKFSLAM:
         np.ndarray
             The Jacobian of f wrt. u.
         """
-        Fu = # TODO, eq (11.14)
+        R = utils.rotmat2d(x[2])
+
+        Fu = la.block_diag(R, 1) # TODO, eq (11.14)
 
         assert Fu.shape == (3, 3), "EKFSLAM.Fu: wrong shape"
         return Fu
