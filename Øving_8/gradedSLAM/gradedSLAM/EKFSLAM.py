@@ -44,7 +44,12 @@ class EKFSLAM:
         np.ndarray, shape = (3,)
             the predicted state
         """
-        xpred = # TODO, eq (11.7). Should wrap heading angle between (-pi, pi), see utils.wrapToPi
+
+        x_pos = x[1] + u[1] * np.cos(x[3]) - u[2] * np.sin(x[3])
+        y_pos = x[1] + u[1] * np.cos(x[3]) - u[2] * np.sin(x[3])
+        yaw_angle = utils.wrapToPi(x[3] + u[3])
+
+        xpred = np.array([x_pos, y_pos, yaw_angle])# TODO, eq (11.7). Should wrap heading angle between (-pi, pi), see utils.wrapToPi
 
         assert xpred.shape == (3,), "EKFSLAM.f: wrong shape for xpred"
         return xpred
