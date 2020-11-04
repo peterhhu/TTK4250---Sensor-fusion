@@ -92,7 +92,7 @@ except Exception as e:
 filename_to_load = "task_real.mat"
 loaded_data = scipy.io.loadmat(filename_to_load)
 
-do_corrections = False # TODO: set to false for the last task
+do_corrections = True # TODO: set to false for the last task
 if do_corrections:
     S_a = loaded_data['S_a']
     S_g = loaded_data['S_g']
@@ -174,8 +174,8 @@ x_pred[0, ATT_IDX] = np.array([
     np.sin(45 * np.pi / 180)
 ])  # nose to east, right to south and belly down.
 
-P_pred[0][POS_IDX**2] = 10**2 * np.eye(3)
-P_pred[0][VEL_IDX**2] = 3**2 * np.eye(3)
+P_pred[0][POS_IDX**2] = 0.1 * np.eye(3)
+P_pred[0][VEL_IDX**2] = 1 * np.eye(3)
 P_pred[0][ERR_ATT_IDX**2] = (np.pi/30)**2 * np.eye(3) # error rotation vector (not quat)
 P_pred[0][ERR_ACC_BIAS_IDX**2] = 0.05**2 * np.eye(3)
 P_pred[0][ERR_GYRO_BIAS_IDX**2] = (1e-3)**2 * np.eye(3)
@@ -211,7 +211,7 @@ for k in tqdm(range(N)):
 # %% Plots
 
 do_plotting = True
-plot_save_path = "./plots/real/Corrected/"
+plot_save_path = "./plots/real/"
 save_plots : bool = True
 
 if do_plotting:
