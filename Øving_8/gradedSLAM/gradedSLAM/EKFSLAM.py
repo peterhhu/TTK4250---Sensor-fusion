@@ -180,7 +180,7 @@ class EKFSLAM:
 
         zpred_r = [np.linalg.norm(mi) for mi in delta_m.T]# TODO, ranges
         zpred_theta = [np.arctan2(mi[1],mi[0]) for mi in delta_m.T]# TODO, bearings
-        zpred = np.vstack(z_pred_r, z_pred_theta)# TODO, the two arrays above stacked on top of each other vertically like 
+        zpred = np.vstack(zpred_r, zpred_theta)# TODO, the two arrays above stacked on top of each other vertically like 
         # [ranges; 
         #  bearings]
         # into shape (2, #lmrk)
@@ -243,7 +243,7 @@ class EKFSLAM:
             ind = 2 * i # starting postion of the ith landmark into H
             inds = slice(ind, ind + 2)  # the inds slice for the ith landmark into H
             Hx[inds,:] = -1 * np.array([[delta_m.T / zr[i], 0], [delta_m.T / (zr[i] ** 2), 1]])
-            Hm[inds,inds] = (1 / zr[i] ** 2) * np.array([[z[i] * delta_m.T], [delta_m.T @ Rpihalf]])
+            Hm[inds,inds] = (1 / zr[i] ** 2) * np.array([[zr[i] * delta_m.T], [delta_m.T @ Rpihalf]])
             # TODO: Set H or Hx and Hm here
 
         assert (H.shape == (2 * numM, 3 + 2 * numM)
