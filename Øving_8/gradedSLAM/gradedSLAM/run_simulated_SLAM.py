@@ -96,14 +96,17 @@ K = len(z)
 M = len(landmarks)
 
 # %% Initilize
-Q = # TODO
-R = # TODO
+Q = np.diag([1, 1, 0.12])*1e-3 # TODO
+R = np.diag([0.08 ** 2, 0.02 ** 2]) # TODO
+
+# Q = np.diag([1, 1, 1]) # TODO
+# R = np.diag([1,1]) # TODO
 
 doAsso = True
 
 JCBBalphas = np.array(
-    # TODO,
-)  # first is for joint compatibility, second is individual
+   [0.7, 0.8] 
+) # TODO # first is for joint compatibility, second is individual
 # these can have a large effect on runtime either through the number of landmarks created
 # or by the size of the association search space.
 
@@ -137,16 +140,16 @@ if doAssoPlot:
     figAsso, axAsso = plt.subplots(num=1, clear=True)
 
 # %% Run simulation
-N = K
+N = 30
 
 print("starting sim (" + str(N) + " iterations)")
 
 for k, z_k in tqdm(enumerate(z[:N])):
 
-    eta_hat[k], P_hat[k], NIS[k], a[k] = # TODO update
+    eta_hat[k], P_hat[k], NIS[k], a[k] = slam.update(eta_pred[k], P_pred[k], z_k) # TODO update
 
     if k < K - 1:
-        eta_pred[k + 1], P_pred[k + 1] = # TODO predict
+        eta_pred[k + 1], P_pred[k + 1] = slam.predict(eta_hat[k], P_hat[k], odometry[k]) # TODO predict
 
     assert (
         eta_hat[k].shape[0] == P_hat[k].shape[0]
@@ -163,7 +166,7 @@ for k, z_k in tqdm(enumerate(z[:N])):
         NISnorm[k] = 1
         CInorm[k].fill(1)
 
-    NEESes[k] = # TODO, use provided function slam.NEESes
+    NEESes[k] = EKFSLAM.NEESes(eta_hat[k][:3], P_hat[k][:3, :3], poseGT[k])# TODO, use provided function slam.NEESes
 
     if doAssoPlot and k > 0:
         axAsso.clear()
@@ -184,7 +187,7 @@ for k, z_k in tqdm(enumerate(z[:N])):
 print("sim complete")
 
 pose_est = np.array([x[:3] for x in eta_hat[:N]])
-lmk_est = [eta_hat_k[3:].reshape(-1, 2) for eta_hat_k in eta_hat]
+lmk_est = [eta_hat_k[3:].reshape(-1, 2) for eta_hat_k in eta_hat[:N]]
 lmk_est_final = lmk_est[N - 1]
 
 np.set_printoptions(precision=4, linewidth=100)
