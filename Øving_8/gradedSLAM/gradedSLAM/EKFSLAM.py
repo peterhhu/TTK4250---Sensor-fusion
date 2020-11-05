@@ -140,7 +140,7 @@ class EKFSLAM:
         # [[P_xx, P_xm],
         # [P_mx, P_mm]]
         P[:3, :3] = Fx @ P[:3, :3] @ Fx.T + self.Q# TODO robot cov prediction
-        P[:3, 3:] = Fx @ P[:3, 3:] @ Fx.T + self.Q# TODO robot-map covariance prediction
+        P[:3, 3:] = Fx @ P[:3, 3:] # TODO robot-map covariance prediction
         P[3:, :3] = P[:3, 3:].T# TODO map-robot covariance: transpose of the above
 
         assert np.allclose(P, P.T), "EKFSLAM.predict: not symmetric P"
@@ -174,12 +174,12 @@ class EKFSLAM:
 
         # None as index ads an axis with size 1 at that position.
         # Numpy broadcasts size 1 dimensions to any size when needed
-        delta_m = m - x[:2]# TODO, relative position of landmark to sensor on robot in world frame
+        delta_m = m - x[:2] - rotmat2d(x[2]) @ self.sensor_offset# TODO, relative position of landmark to sensor on robot in world frame
 
-        zpredcart = Rot @ delta_m# TODO, predicted measurements in cartesian coordinates, beware sensor offset for VP
+        zpredcart = Rot @ delta_m # TODO, predicted measurements in cartesian coordinates, beware sensor offset for VP
 
-        zpred_r = np.linalg.norm(delta_m)# TODO, ranges
-        zpred_theta = np.arctan(zpredcart[:,1], zpredcart[:,0])# TODO, bearings
+        zpred_r = [np.linalg.norm(mi) for mi in delta_m.T]# TODO, ranges
+        zpred_theta = [np.arctan2(mi[1],mi[0]) for mi in delta_m.T]# TODO, bearings
         zpred = np.vstack(z_pred_r, z_pred_theta)# TODO, the two arrays above stacked on top of each other vertically like 
         # [ranges; 
         #  bearings]
@@ -214,7 +214,7 @@ class EKFSLAM:
 
         Rot = rotmat2d(-x[2])
 
-        delta_m = m - x[:2] # TODO, relative position of landmark to robot in world frame. m - rho that appears in (11.15) and (11.16)
+        delta_m = m - x[:2] - rotmat2d(x[2]) @ self.sensor_offset # TODO, relative position of landmark to robot in world frame. m - rho that appears in (11.15) and (11.16)
 
         zc = Rot @ delta_m# TODO, (2, #measurements), each measured position in cartesian coordinates like
         # [x coordinates;
@@ -223,7 +223,7 @@ class EKFSLAM:
         zpred = self.h(eta)# TODO (2, #measurements), predicted measurements, like
         # [ranges;
         #  bearings]
-        zr = z_pred[:numM]# TODO, ranges
+        zr = zpred[::2]# TODO, ranges
 
         Rpihalf = rotmat2d(np.pi / 2)
 
@@ -239,10 +239,11 @@ class EKFSLAM:
 
         # proposed way is to go through landmarks one by one
         jac_z_cb = -np.eye(2, 3)  # preallocate and update this for some speed gain if looping
-        for i in range(numM):  # But this whole loop can be vectorized
+        for i in range(numM):  # But this hole loop can be vectorized
             ind = 2 * i # starting postion of the ith landmark into H
             inds = slice(ind, ind + 2)  # the inds slice for the ith landmark into H
-
+            Hx[inds,:] = -1 * np.array([[delta_m.T / zr[i], 0], [delta_m.T / (zr[i] ** 2), 1]])
+            Hm[inds,inds] = (1 / zr[i] ** 2) * np.array([[z[i] * delta_m.T], [delta_m.T @ Rpihalf]])
             # TODO: Set H or Hx and Hm here
 
         assert (H.shape == (2 * numM, 3 + 2 * numM)
@@ -287,7 +288,7 @@ class EKFSLAM:
             inds = slice(ind, ind + 2)
             zj = z[inds]
 
-            rot = # TODO, rotmat in Gz
+            rot = rotmat2d(zj[2] + eta[2])# TODO, rotmat in Gz
             lmnew[inds] = # TODO, calculate position of new landmark in world frame
 
             Gx[inds, :2] = # TODO
