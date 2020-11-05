@@ -20,6 +20,6 @@ n = np.linalg.norm(v[:,1])
 
 p = np.arctan2(v[:,1], v[:,0])
 
-print(x[end])
+print(x[])
 
 
