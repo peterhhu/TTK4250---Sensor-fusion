@@ -175,7 +175,7 @@ class EKFSLAM:
 
         # None as index ads an axis with size 1 at that position.
         # Numpy broadcasts size 1 dimensions to any size when needed
-        delta_m = m - x[:2].reshape(2,1) - (rotmat2d(x[2]) @ self.sensor_offset).reshape(2,1)# TODO, relative position of landmark to sensor on robot in world frame
+        delta_m = m - x[:2].reshape(2,1) - rotmat2d(x[2]) @ (self.sensor_offset).reshape(2,1)# TODO, relative position of landmark to sensor on robot in world frame
 
         zpredcart = Rot @ delta_m # TODO, predicted measurements in cartesian coordinates, beware sensor offset for VP
 
@@ -215,7 +215,7 @@ class EKFSLAM:
 
         Rot = rotmat2d(-x[2])
 
-        delta_m = m - x[:2].reshape(2,1) - (rotmat2d(x[2]) @ self.sensor_offset).reshape(2,1) # TODO, relative position of landmark to robot in world frame. m - rho that appears in (11.15) and (11.16)
+        delta_m = m - x[:2].reshape(2,1) - rotmat2d(x[2]) @ (self.sensor_offset.reshape(2,1))# TODO, relative position of landmark to robot in world frame. m - rho that appears in (11.15) and (11.16)
 
         zc = Rot @ delta_m# TODO, (2, #measurements), each measured position in cartesian coordinates like
         # [x coordinates;
@@ -240,11 +240,14 @@ class EKFSLAM:
 
         # proposed way is to go through landmarks one by one
         jac_z_cb = -np.eye(2, 3)  # preallocate and update this for some speed gain if looping
+       
         for i in range(numM):  # But this hole loop can be vectorized
             ind = 2 * i # starting postion of the ith landmark into H
             inds = slice(ind, ind + 2)  # the inds slice for the ith landmark into H
-            Hx[inds,:] = -1 * np.array([[*(delta_m[:,i].T / zr[i]), 0], [*(delta_m[:,i].T / (zr[i] ** 2)), 1]])
-            Hm[inds,inds] = (1 / zr[i] ** 2) * np.array([[*(zr[i] * delta_m[:,i].T)], [*delta_m[:,i].T @ Rpihalf]])
+            jac_z_cb[:, 2] = Rpihalf @ delta_m[:, i]
+            Hx[inds,:][0, :] = (delta_m[:, i].T / zr[i]) @ jac_z_cb
+            Hx[inds,:][1, :] = (delta_m[:, i].T @ Rpihalf.T / (zr[i] ** 2)) @ jac_z_cb
+            Hm[inds,inds] = Hx[inds, 0:2]
             # TODO: Set H or Hx and Hm here
 
         assert (H.shape == (2 * numM, 3 + 2 * numM)
@@ -288,9 +291,10 @@ class EKFSLAM:
             ind = 2 * j
             inds = slice(ind, ind + 2)
             zj = z[inds]
+            zj_cart = zj[0] * np.array([np.cos(zj[1]), np.sin(zj[1])])
 
             rot = rotmat2d(zj[1] + eta[2])# TODO, rotmat in Gz
-            lmnew[inds] = eta[:2] + sensor_offset_world * zj[0]# TODO, calculate position of new landmark in world frame
+            lmnew[inds] = eta[:2] + rotmat2d(eta[2]) @ zj_cart + sensor_offset_world# TODO, calculate position of new landmark in world frame
 
             Gx[inds, :2] = I2 # TODO
             Gx[inds, 2] = zj[0] * rot[:, 1] + sensor_offset_world_der# TODO

@@ -3,9 +3,12 @@ from scipy import linalg as la
 import utils
 from numpy import matlib as ml
 
-R = np.diag([1, 2])
+l = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+m = np.array([2, 4])
+v = l.reshape(-1,2).T
+m = m.transpose()
+k = v - m.reshape(2,1)
 
-t = np.diag(np.diagonal(np.matlib.repmat(R, 4, 4)))
-
-print(t)
+j = np.eye(2, 3)
+print(j)
 
