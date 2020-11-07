@@ -177,9 +177,10 @@ class EKFSLAM:
         delta_m = m - x[:2].reshape(2,1) - rotmat2d(x[2]) @ (self.sensor_offset).reshape(2,1)# TODO, relative position of landmark to sensor on robot in world frame
 
         zpredcart = [Rot @ mi for mi in delta_m.T] # TODO, predicted measurements in cartesian coordinates, beware sensor offset for VP
+        print(zpredcart)
 
         zpred_r = [np.linalg.norm(mi) for mi in delta_m.T]# TODO, ranges
-        zpred_theta = [np.arctan2(mi[1],mi[0]) for mi in zpredcart.T]# TODO, bearings
+        zpred_theta = [np.arctan2(mi[1],mi[0]) for mi in zpredcart]# TODO, bearings
         zpred = np.vstack([zpred_r, zpred_theta])# TODO, the two arrays above stacked on top of each other vertically like 
         # [ranges; 
         #  bearings]
@@ -217,7 +218,7 @@ class EKFSLAM:
         delta_m = m - x[:2].reshape(2,1) - rotmat2d(x[2]) @ (self.sensor_offset.reshape(2,1))# TODO, relative position of landmark to robot in world frame. m - rho that appears in (11.15) and (11.16)
         delta_m_plain = m - x[:2].reshape(2,1)
 
-        zc = Rot @ delta_m# TODO, (2, #measurements), each measured position in cartesian coordinates like
+        zc = [Rot @ mi for mi in delta_m.T]# TODO, (2, #measurements), each measured position in cartesian coordinates like
         # [x coordinates;
         #  y coordinates]
 
@@ -240,13 +241,17 @@ class EKFSLAM:
 
         # proposed way is to go through landmarks one by one
         jac_z_cb = -np.eye(2, 3)  # preallocate and update this for some speed gain if looping
-       
+        I2 = np.eye(2)
         for i in range(numM):  # But this hole loop can be vectorized
             ind = 2 * i # starting postion of the ith landmark into H
             inds = slice(ind, ind + 2)  # the inds slice for the ith landmark into H
+            jac_z_cb[:2, :2] = I2
             jac_z_cb[:, 2] = -Rpihalf @ delta_m_plain[:,i] #delta_m[:, i]
-            Hx[inds,:][0, :] = (delta_m[:, i].T / zr[i]) @ jac_z_cb
-            Hx[inds,:][1, :] = (delta_m[:, i].T @ Rpihalf.T / (zr[i] ** 2)) @ jac_z_cb
+            jac_z_cb[0,:] = (delta_m[:, i].T / zr[i]) @ jac_z_cb
+            jac_z_cb[1,:] = (delta_m[:, i].T @ Rpihalf.T / (zr[i] ** 2)) @ jac_z_cb
+            Hx[inds,:] = jac_z_cb
+            # Hx[inds,:][0, :] = (delta_m[:, i].T / zr[i]) @ jac_z_cb
+            # Hx[inds,:][1, :] = (delta_m[:, i].T @ Rpihalf.T / (zr[i] ** 2)) @ jac_z_cb
             Hm[inds,inds] = Hx[inds, 0:2]
             # TODO: Set H or Hx and Hm here
 
@@ -305,8 +310,8 @@ class EKFSLAM:
 
         assert len(lmnew) % 2 == 0, "SLAM.add_landmark: lmnew not even length"
         etaadded = np.concatenate([eta[:], lmnew]) # TODO, append new landmarks to state vector
-        Padded = la.block_diag(P, Gx @ P[:3,:3] @ Gx.T + Rall.T) # TODO, block diagonal of P_new, see problem text in 1g) in graded assignment 3
-        Padded[:n, n:] = P[:, :3] @ Gx.T # TODO, top right corner of P_new
+        Padded = la.block_diag(P, Gx @ P[:3,:3] @ Gx.T + Rall) # TODO, block diagonal of P_new, see problem text in 1g) in graded assignment 3
+        Padded[:n, n:] = P[:,:3] @ Gx.T  # TODO, top right corner of P_new
         Padded[n:, :n] = Padded[:n, n:].T # TODO, transpose of above. Should yield the same as calcualion, but this enforces symmetry and should be cheaper
 
         assert (
