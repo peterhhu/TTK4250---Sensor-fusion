@@ -177,7 +177,6 @@ class EKFSLAM:
         delta_m = m - x[:2].reshape(2,1) - rotmat2d(x[2]) @ (self.sensor_offset).reshape(2,1)# TODO, relative position of landmark to sensor on robot in world frame
 
         zpredcart = [Rot @ mi for mi in delta_m.T] # TODO, predicted measurements in cartesian coordinates, beware sensor offset for VP
-        print(zpredcart)
 
         zpred_r = [np.linalg.norm(mi) for mi in delta_m.T]# TODO, ranges
         zpred_theta = [np.arctan2(mi[1],mi[0]) for mi in zpredcart]# TODO, bearings
