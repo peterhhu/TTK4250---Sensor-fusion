@@ -46,11 +46,10 @@ class EKFSLAM:
             the predicted state
         """
 
-        x_pos = x[0] + u[0] * np.cos(x[2]) - u[1] * np.sin(x[2])
-        y_pos = x[1] + u[0] * np.sin(x[2]) + u[1] * np.cos(x[2])
+        pos = x[:2] + rotmat2d(x[2]) @ u[:2]
         yaw_angle = utils.wrapToPi(x[2] + u[2])
 
-        xpred = np.array([x_pos, y_pos, yaw_angle])# TODO, eq (11.7). Should wrap heading angle between (-pi, pi), see utils.wrapToPi
+        xpred = np.array([*pos, yaw_angle])# TODO, eq (11.7). Should wrap heading angle between (-pi, pi), see utils.wrapToPi
 
         assert xpred.shape == (3,), "EKFSLAM.f: wrong shape for xpred"
         return xpred
@@ -216,6 +215,7 @@ class EKFSLAM:
         Rot = rotmat2d(-x[2])
 
         delta_m = m - x[:2].reshape(2,1) - rotmat2d(x[2]) @ (self.sensor_offset.reshape(2,1))# TODO, relative position of landmark to robot in world frame. m - rho that appears in (11.15) and (11.16)
+        delta_m_plain = m - x[:2].reshape(2,1)
 
         zc = Rot @ delta_m# TODO, (2, #measurements), each measured position in cartesian coordinates like
         # [x coordinates;
@@ -244,7 +244,7 @@ class EKFSLAM:
         for i in range(numM):  # But this hole loop can be vectorized
             ind = 2 * i # starting postion of the ith landmark into H
             inds = slice(ind, ind + 2)  # the inds slice for the ith landmark into H
-            jac_z_cb[:, 2] = Rpihalf @ delta_m[:, i]
+            jac_z_cb[:, 2] = -Rpihalf @ delta_m_plain[:,i] #delta_m[:, i]
             Hx[inds,:][0, :] = (delta_m[:, i].T / zr[i]) @ jac_z_cb
             Hx[inds,:][1, :] = (delta_m[:, i].T @ Rpihalf.T / (zr[i] ** 2)) @ jac_z_cb
             Hm[inds,inds] = Hx[inds, 0:2]
@@ -429,7 +429,7 @@ class EKFSLAM:
 
                 # Kalman mean update
                 S_cho_factors = la.cho_factor(Sa) # Optional, used in places for S^-1, see scipy.linalg.cho_factor and scipy.linalg.cho_solve
-                W = P @ Ha.T @ la.cho_solve(S_cho_factors, np.ones(len(Sa)))# TODO, Kalman gain, can use S_cho_factors
+                W = P @ Ha.T @ la.inv(Sa) #la.cho_solve(S_cho_factors, np.ones(len(Sa)))# TODO, Kalman gain, can use S_cho_factors
                 etaupd = eta + W @ v # TODO, Kalman update
 
                 # Kalman cov update: use Joseph form for stability

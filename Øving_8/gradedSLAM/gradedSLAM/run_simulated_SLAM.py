@@ -105,7 +105,7 @@ R = np.diag([0.08 ** 2, 0.02 ** 2]) # TODO
 doAsso = True
 
 JCBBalphas = np.array(
-   [0.7, 0.8] 
+   [1e-4, 1e-6] 
 ) # TODO # first is for joint compatibility, second is individual
 # these can have a large effect on runtime either through the number of landmarks created
 # or by the size of the association search space.
