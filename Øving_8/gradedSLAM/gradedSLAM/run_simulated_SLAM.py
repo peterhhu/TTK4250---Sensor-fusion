@@ -123,9 +123,10 @@ NISnorm = np.zeros(K)
 CI = np.zeros((K, 2))
 CInorm = np.zeros((K, 2))
 NEESes = np.zeros((K, 3))
+total_num_asso = 0
 
 # For consistency testing
-alpha = 0.05
+alpha = 0.95
 
 # init
 eta_pred[0] = poseGT[0]  # we start at the correct position for reference
@@ -140,7 +141,7 @@ if doAssoPlot:
     figAsso, axAsso = plt.subplots(num=1, clear=True)
 
 # %% Run simulation
-N = 30
+N = 5
 
 print("starting sim (" + str(N) + " iterations)")
 
@@ -156,6 +157,7 @@ for k, z_k in tqdm(enumerate(z[:N])):
     ), "dimensions of mean and covariance do not match"
 
     num_asso = np.count_nonzero(a[k] > -1)
+    total_num_asso += num_asso
 
     CI[k] = chi2.interval(alpha, 2 * num_asso)
 
@@ -193,6 +195,10 @@ lmk_est_final = lmk_est[N - 1]
 np.set_printoptions(precision=4, linewidth=100)
 
 # %% Plotting of results
+
+plot_save_path = "./plots/simulated/"
+save_plots : bool = True
+
 mins = np.amin(landmarks, axis=0)
 maxs = np.amax(landmarks, axis=0)
 
@@ -220,6 +226,9 @@ ax2.set(title="results", xlim=(mins[0], maxs[0]), ylim=(mins[1], maxs[1]))
 ax2.axis("equal")
 ax2.grid()
 
+if save_plots:
+    plt.savefig(plot_save_path + "trajectory_and_landmark_simulated.pdf", format="pdf")
+
 # %% Consistency
 
 # NIS
@@ -230,7 +239,17 @@ ax3.plot(CInorm[:N,0], '--')
 ax3.plot(CInorm[:N,1], '--')
 ax3.plot(NISnorm[:N], lw=0.5)
 
-ax3.set_title(f'NIS, {insideCI.mean()*100}% inside CI')
+ax3.set_title(f'NIS, {insideCI.mean()*100:.4f}% inside CI')
+
+dofs = 2 * total_num_asso
+
+CI_ANIS = np.array(chi2.interval(alpha, dofs * N)) / N
+
+print(f"CI ANIS: {CI_ANIS}")
+print(f"ANIS: {NISnorm.mean()}")
+
+if save_plots:
+    plt.savefig(plot_save_path + "NIS_simulated.pdf", format="pdf")
 
 # NEES
 
@@ -244,13 +263,16 @@ for ax, tag, NEES, df in zip(ax4, tags, NEESes.T, dfs):
     ax.plot(np.full(N, CI_NEES[1]), '--')
     ax.plot(NEES[:N], lw=0.5)
     insideCI = (CI_NEES[0] <= NEES) * (NEES <= CI_NEES[1])
-    ax.set_title(f'NEES {tag}: {insideCI.mean()*100}% inside CI')
+    ax.set_title(f'NEES {tag}: {insideCI.mean()*100:.4f}% inside CI')
 
     CI_ANEES = np.array(chi2.interval(alpha, df*N)) / N
     print(f"CI ANEES {tag}: {CI_ANEES}")
     print(f"ANEES {tag}: {NEES.mean()}")
 
 fig4.tight_layout()
+
+if save_plots:
+    plt.savefig(plot_save_path + "NEES_simulated.pdf", format="pdf")
 
 # %% RMSE
 
@@ -266,11 +288,14 @@ errs = np.vstack((pos_err, heading_err))
 
 for ax, err, tag, ylabel, scaling in zip(ax5, errs, tags[1:], ylabels, scalings):
     ax.plot(err*scaling)
-    ax.set_title(f"{tag}: RMSE {np.sqrt((err**2).mean())*scaling} {ylabel}")
+    ax.set_title(f"{tag}: RMSE {np.sqrt((err**2).mean())*scaling:.4f} {ylabel}")
     ax.set_ylabel(f"[{ylabel}]")
     ax.grid()
 
 fig5.tight_layout()
+
+if save_plots:
+    plt.savefig(plot_save_path + "RMSE_simulated.pdf", format="pdf")
 
 # %% Movie time
 
