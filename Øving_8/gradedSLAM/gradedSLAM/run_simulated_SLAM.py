@@ -96,8 +96,8 @@ K = len(z)
 M = len(landmarks)
 
 # %% Initilize
-#Q = np.diag([10, 10, 0.12])*1e-3 # TODO Best
-#R = np.diag([0.06 ** 2, 0.02 ** 2]) # TODO Best
+Q = np.diag([10, 10, 0.12])*1e-3 # TODO Best
+R = np.diag([0.06 ** 2, 0.02 ** 2]) # TODO Best
 
 #Q = np.diag([10, 10, 0.12])*1e-3 # TODO
 #R = np.diag([0.08 ** 2, 0.02 ** 2]) # TODO
@@ -105,8 +105,8 @@ M = len(landmarks)
 # Q = np.diag([1, 1, 0.12])*1e-3 # TODO
 # R = np.diag([0.08 ** 2, 0.02 ** 2]) # TODO
 
-Q = np.diag([1, 1, 1]) # TODO BAD
-R = np.diag([1,1]) # TODO BAD
+# Q = np.diag([1, 1, 1]) # TODO BAD
+# R = np.diag([1,1]) # TODO BAD
 
 doAsso = True
 
