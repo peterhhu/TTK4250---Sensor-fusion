@@ -96,11 +96,17 @@ K = len(z)
 M = len(landmarks)
 
 # %% Initilize
+#Q = np.diag([10, 10, 0.12])*1e-3 # TODO Best
+#R = np.diag([0.06 ** 2, 0.02 ** 2]) # TODO Best
+
+#Q = np.diag([10, 10, 0.12])*1e-3 # TODO
+#R = np.diag([0.08 ** 2, 0.02 ** 2]) # TODO
+
 Q = np.diag([1, 1, 0.12])*1e-3 # TODO
 R = np.diag([0.08 ** 2, 0.02 ** 2]) # TODO
 
-# Q = np.diag([1, 1, 1]) # TODO
-# R = np.diag([1,1]) # TODO
+# Q = np.diag([1, 1, 1]) # TODO BAD
+# R = np.diag([1,1]) # TODO BAD
 
 doAsso = True
 
@@ -135,13 +141,13 @@ P_pred[0] = np.zeros((3, 3))  # we also say that we are 100% sure about that
 # %% Set up plotting
 # plotting
 
-doAssoPlot = True
-playMovie = True
+doAssoPlot = False
+playMovie = False
 if doAssoPlot:
     figAsso, axAsso = plt.subplots(num=1, clear=True)
 
 # %% Run simulation
-N = 5
+N = K
 
 print("starting sim (" + str(N) + " iterations)")
 
@@ -197,7 +203,7 @@ np.set_printoptions(precision=4, linewidth=100)
 # %% Plotting of results
 
 plot_save_path = "./plots/simulated/"
-save_plots : bool = True
+save_plots : bool = False
 
 mins = np.amin(landmarks, axis=0)
 maxs = np.amax(landmarks, axis=0)

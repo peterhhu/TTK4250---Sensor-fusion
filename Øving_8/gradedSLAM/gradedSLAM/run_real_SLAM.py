@@ -106,7 +106,7 @@ b = 0.5  # laser distance to the left of center
 
 car = Car(L, H, a, b)
 
-sigmas = [1, 1, 0.12] * 1e-3 # TODO stolen from simulated by peterhhu
+sigmas = np.array([1, 1, 0.12]) * 1e-3 # TODO stolen from simulated by peterhhu
 CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
 Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
 
