@@ -106,14 +106,14 @@ b = 0.5  # laser distance to the left of center
 
 car = Car(L, H, a, b)
 
-sigmas = # TODO
+sigmas = [1, 1, 0.12] * 1e-3 # TODO stolen from simulated by peterhhu
 CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
 Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
 
-R = # TODO
+R = np.diag([0.08 ** 2, 0.02 ** 2]) # TODO # stolen from simulated by peterhhu
 
 JCBBalphas = np.array(
-    # TODO
+    [1e-4, 1e-6] # TODO stolen from simulated by peterhhu
 )
 sensorOffset = np.array([car.a + car.L, car.b])
 doAsso = True
@@ -130,6 +130,7 @@ NIS = np.zeros(mK)
 NISnorm = np.zeros(mK)
 CI = np.zeros((mK, 2))
 CInorm = np.zeros((mK, 2))
+total_num_asso = 0
 
 # Initialize state
 eta = np.array([Lo_m[0], La_m[1], 36 * np.pi / 180]) # you might want to tweak these for a good reference
@@ -140,9 +141,9 @@ mk = mk_first
 t = timeOdo[0]
 
 # %%  run
-N = 1000#K
+N = 10#K
 
-doPlot = False
+doPlot = True
 
 lh_pose = None
 
@@ -176,12 +177,13 @@ for k in tqdm(range(N)):
 
         t = timeLsr[mk]  # ? reset time to this laser time for next post predict
         odo = odometry(speed[k + 1], steering[k + 1], dt, car)
-        eta, P = # TODO predict
+        eta, P = slam.predict(xupd[k-1], P, odo)# TODO predict
 
         z = detectTrees(LASER[mk])
-        eta, P, NIS[mk], a[mk] = # TODO update
+        eta, P, NIS[mk], a[mk] = slam.update(eta, P, z)# TODO update
 
         num_asso = np.count_nonzero(a[mk] > -1)
+        total_num_asso += num_asso
 
         if num_asso > 0:
             NISnorm[mk] = NIS[mk] / (2 * num_asso)
@@ -235,6 +237,17 @@ ax3.plot(CInorm[:mk, 1], "--")
 ax3.plot(NISnorm[:mk], lw=0.5)
 
 ax3.set_title(f"NIS, {insideCI.mean()*100:.2f}% inside CI")
+
+# THE FOLLOWING PART IS STOLEN FROM SIMULATED,
+# AND WILL CALCULATE ANIS. NOT FINISHED!!!!
+
+# dofs = 2 * total_num_asso
+
+# CI_ANIS = np.array(chi2.interval(alpha, dofs * N)) / N
+
+# print(f"CI ANIS: {CI_ANIS}")
+# print(f"ANIS: {NISnorm.mean()}")
+
 
 # %% slam
 
