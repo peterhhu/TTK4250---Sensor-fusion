@@ -244,14 +244,14 @@ class EKFSLAM:
         for i in range(numM):  # But this hole loop can be vectorized
             ind = 2 * i # starting postion of the ith landmark into H
             inds = slice(ind, ind + 2)  # the inds slice for the ith landmark into H
-            jac_z_cb[:2, :2] = I2
+            jac_z_cb[:2, :2] = -I2
             jac_z_cb[:, 2] = -Rpihalf @ delta_m_plain[:,i] #delta_m[:, i]
             jac_z_cb[0,:] = (delta_m[:, i].T / zr[i]) @ jac_z_cb
             jac_z_cb[1,:] = (delta_m[:, i].T @ Rpihalf.T / (zr[i] ** 2)) @ jac_z_cb
             Hx[inds,:] = jac_z_cb
             # Hx[inds,:][0, :] = (delta_m[:, i].T / zr[i]) @ jac_z_cb
             # Hx[inds,:][1, :] = (delta_m[:, i].T @ Rpihalf.T / (zr[i] ** 2)) @ jac_z_cb
-            Hm[inds,inds] = Hx[inds, 0:2]
+            Hm[inds,inds] = -Hx[inds, 0:2]
             # TODO: Set H or Hx and Hm here
 
         assert (H.shape == (2 * numM, 3 + 2 * numM)
