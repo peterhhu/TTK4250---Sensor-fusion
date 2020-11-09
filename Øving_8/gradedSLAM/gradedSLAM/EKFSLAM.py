@@ -412,7 +412,7 @@ class EKFSLAM:
             
             R_repeated =  np.diag(np.diagonal(ml.repmat(self.R, numLmk, numLmk)))
      
-            S = H @ P @ H.T + R_repeated #np.kron(np.eye(numLmk), self.R)# TODO
+            S = H @ P @ H.T + R_repeated # np.kron(np.eye(numLmk), self.R)# TODO 
             assert (
                 S.shape == zpred.shape * 2
             ), "EKFSLAM.update: wrong shape on either S or zpred"

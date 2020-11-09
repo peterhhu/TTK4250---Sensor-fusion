@@ -208,7 +208,7 @@ np.set_printoptions(precision=4, linewidth=100)
 # %% Plotting of results
 
 plot_save_path = "./plots/simulated/"
-save_plots : bool = True
+save_plots : bool = False
 
 mins = np.amin(landmarks, axis=0)
 maxs = np.amax(landmarks, axis=0)
