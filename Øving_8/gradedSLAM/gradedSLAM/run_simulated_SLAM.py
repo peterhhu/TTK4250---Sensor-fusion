@@ -133,7 +133,7 @@ NIS = np.zeros(K)
 NISnorm = np.zeros(K)
 CI = np.zeros((K, 2))
 CInorm = np.zeros((K, 2))
-NEESes = np.zeros((K, 3))
+NEESes = np.zeros((K, 5))
 total_num_asso = 0
 
 # For consistency testing
@@ -253,7 +253,7 @@ ax3.plot(CInorm[:N,0], '--')
 ax3.plot(CInorm[:N,1], '--')
 ax3.plot(NISnorm[:N], lw=0.5)
 
-ax3.set_title(f'NIS, {insideCI.mean()*100:.4f}% inside CI')
+ax3.set_title(f'NIS, {insideCI.mean()*100:.2f}% inside CI')
 
 dofs = 2 * total_num_asso
 
@@ -267,9 +267,9 @@ if save_plots:
 
 # NEES
 
-fig4, ax4 = plt.subplots(nrows=3, ncols=1, figsize=(10, 10), num=4, clear=True, sharex=True)
-tags = ['all', 'pos', 'heading']
-dfs = [3, 2, 1]
+fig4, ax4 = plt.subplots(nrows=5, ncols=1, figsize=(10, 10), num=4, clear=True, sharex=True)
+tags = ['all', 'pos', 'pos_x', 'pos_y', 'heading']
+dfs = [3, 2, 1, 1, 1]
 
 for ax, tag, NEES, df in zip(ax4, tags, NEESes.T, dfs):
     CI_NEES = chi2.interval(alpha, df)
@@ -277,7 +277,7 @@ for ax, tag, NEES, df in zip(ax4, tags, NEESes.T, dfs):
     ax.plot(np.full(N, CI_NEES[1]), '--')
     ax.plot(NEES[:N], lw=0.5)
     insideCI = (CI_NEES[0] <= NEES) * (NEES <= CI_NEES[1])
-    ax.set_title(f'NEES {tag}: {insideCI.mean()*100:.4f}% inside CI')
+    ax.set_title(f'NEES {tag}: {insideCI.mean()*100:.2f}% inside CI')
 
     CI_ANEES = np.array(chi2.interval(alpha, df*N)) / N
     print(f"CI ANEES {tag}: {CI_ANEES}")
@@ -302,7 +302,7 @@ errs = np.vstack((pos_err, heading_err))
 
 for ax, err, tag, ylabel, scaling in zip(ax5, errs, tags[1:], ylabels, scalings):
     ax.plot(err*scaling)
-    ax.set_title(f"{tag}: RMSE {np.sqrt((err**2).mean())*scaling:.4f} {ylabel}")
+    ax.set_title(f"{tag}: RMSE {np.sqrt((err**2).mean())*scaling:.2f} {ylabel}")
     ax.set_ylabel(f"[{ylabel}]")
     ax.grid()
 

@@ -499,20 +499,37 @@ class EKFSLAM:
         d_p = d_x[0:2]
         P_p = P[0:2, 0:2]
         assert d_p.shape == (2,), "EKFSLAM.NEES: d_p must be 2 long"
+        d_p_x = d_x[0]  # Note: scalar
+        assert np.ndim(d_p_x) == 0, "EKFSLAM.NEES: d_heading must be scalar"
+        P_p_x = P[0, 0]  # Note: scalar
+        assert np.ndim(P_p_x) == 0, "EKFSLAM.NEES: P_heading must be scalar"
+        d_p_y = d_x[1]  # Note: scalar
+        assert np.ndim(d_p_y) == 0, "EKFSLAM.NEES: d_heading must be scalar"
+        P_p_y = P[1, 1]  # Note: scalar
+        assert np.ndim(P_p_y) == 0, "EKFSLAM.NEES: P_heading must be scalar"
         d_heading = d_x[2]  # Note: scalar
         assert np.ndim(d_heading) == 0, "EKFSLAM.NEES: d_heading must be scalar"
         P_heading = P[2, 2]  # Note: scalar
         assert np.ndim(P_heading) == 0, "EKFSLAM.NEES: P_heading must be scalar"
+        
 
         # NB: Needs to handle both vectors and scalars! Additionally, must handle division by zero
         NEES_all = d_x @ (np.linalg.solve(P, d_x))
         NEES_pos = d_p @ (np.linalg.solve(P_p, d_p))
         try:
+            NEES_x = d_p_x ** 2 / P_p_x
+        except ZeroDivisionError:
+            NEES_x = 1.0 # TODO: beware
+        try:
+            NEES_y = d_p_y ** 2 / P_p_y
+        except ZeroDivisionError:
+            NEES_y = 1.0 # TODO: beware
+        try:
             NEES_heading = d_heading ** 2 / P_heading
         except ZeroDivisionError:
             NEES_heading = 1.0 # TODO: beware
 
-        NEESes = np.array([NEES_all, NEES_pos, NEES_heading])
+        NEESes = np.array([NEES_all, NEES_pos, NEES_x, NEES_y, NEES_heading])
         NEESes[np.isnan(NEESes)] = 1.0  # We may divide by zero, # TODO: beware
 
         assert np.all(NEESes >= 0), "ESKF.NEES: one or more negative NEESes"
