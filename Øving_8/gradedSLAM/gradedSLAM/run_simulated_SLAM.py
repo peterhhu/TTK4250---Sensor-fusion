@@ -51,6 +51,8 @@ try:
     # gives quite nice plots
     plt_styles = ["science", "grid", "bright", "no-latex"]
     plt.style.use(plt_styles)
+    plt.rcParams['pdf.fonttype'] = 42
+    plt.rcParams['font.family'] = 'Calibri'
     print(f"pyplot using style set {plt_styles}")
 except Exception as e:
     print(e)
@@ -96,8 +98,11 @@ K = len(z)
 M = len(landmarks)
 
 # %% Initilize
-Q = np.diag([10, 10, 0.12])*1e-3 # TODO Best
+Q = np.diag([10, 10, 0.10])*1e-3 # TODO Best 
 R = np.diag([0.06 ** 2, 0.02 ** 2]) # TODO Best
+
+# Q = np.diag([10, 10, 0.12])*1e-3 # TODO
+# R = np.diag([0.06 ** 2, 0.02 ** 2]) # TODO
 
 #Q = np.diag([10, 10, 0.12])*1e-3 # TODO
 #R = np.diag([0.08 ** 2, 0.02 ** 2]) # TODO
@@ -203,7 +208,7 @@ np.set_printoptions(precision=4, linewidth=100)
 # %% Plotting of results
 
 plot_save_path = "./plots/simulated/"
-save_plots : bool = False
+save_plots : bool = True
 
 mins = np.amin(landmarks, axis=0)
 maxs = np.amax(landmarks, axis=0)
@@ -214,10 +219,10 @@ offsets = ranges * 0.2
 mins -= offsets
 maxs += offsets
 
-fig2, ax2 = plt.subplots(num=2, clear=True)
+fig2, ax2 = plt.subplots(num=2, figsize=(10,10), clear=True)
 # landmarks
-ax2.scatter(*landmarks.T, c="r", marker="^")
-ax2.scatter(*lmk_est_final.T, c="b", marker=".")
+ax2.scatter(*landmarks.T, c="r", marker="^", label=r"$\mathbf{m_{gt}}$")
+ax2.scatter(*lmk_est_final.T, c="b", marker=".", label=r"$\mathbf{\hat{m}}$")
 # Draw covariance ellipsis of measurements
 for l, lmk_l in enumerate(lmk_est_final):
     idxs = slice(3 + 2 * l, 3 + 2 * l + 2)
@@ -225,12 +230,15 @@ for l, lmk_l in enumerate(lmk_est_final):
     el = ellipse(lmk_l, rI, 5, 200)
     ax2.plot(*el.T, "b")
 
-ax2.plot(*poseGT.T[:2], c="r", label="gt")
-ax2.plot(*pose_est.T[:2], c="g", label="est")
+ax2.plot(*poseGT.T[:2], c="r", label=r"$\mathbf{x_{gt}}$")
+ax2.plot(*pose_est.T[:2], c="g", label=r"$\mathbf{\hat{x}}$")
 ax2.plot(*ellipse(pose_est[-1, :2], P_hat[N - 1][:2, :2], 5, 200).T, c="g")
-ax2.set(title="results", xlim=(mins[0], maxs[0]), ylim=(mins[1], maxs[1]))
+ax2.set(title="Trajectory and landmarks", xlim=(mins[0], maxs[0]), ylim=(mins[1], maxs[1]))
 ax2.axis("equal")
+ax2.set_ylabel("NORTH [m]")
+ax2.set_xlabel("EAST [m]")
 ax2.grid()
+ax2.legend()
 
 if save_plots:
     plt.savefig(plot_save_path + "trajectory_and_landmark_simulated.pdf", format="pdf")
@@ -240,7 +248,7 @@ if save_plots:
 # NIS
 insideCI = (CInorm[:N,0] <= NISnorm[:N]) * (NISnorm[:N] <= CInorm[:N,1])
 
-fig3, ax3 = plt.subplots(num=3, clear=True)
+fig3, ax3 = plt.subplots(num=3, figsize=(10,10), clear=True)
 ax3.plot(CInorm[:N,0], '--')
 ax3.plot(CInorm[:N,1], '--')
 ax3.plot(NISnorm[:N], lw=0.5)
@@ -259,7 +267,7 @@ if save_plots:
 
 # NEES
 
-fig4, ax4 = plt.subplots(nrows=3, ncols=1, figsize=(7, 5), num=4, clear=True, sharex=True)
+fig4, ax4 = plt.subplots(nrows=3, ncols=1, figsize=(10, 10), num=4, clear=True, sharex=True)
 tags = ['all', 'pos', 'heading']
 dfs = [3, 2, 1]
 
@@ -285,7 +293,7 @@ if save_plots:
 ylabels = ['m', 'deg']
 scalings = np.array([1, 180/np.pi])
 
-fig5, ax5 = plt.subplots(nrows=2, ncols=1, figsize=(7, 5), num=5, clear=True, sharex=True)
+fig5, ax5 = plt.subplots(nrows=2, ncols=1, figsize=(10, 10), num=5, clear=True, sharex=True)
 
 pos_err = np.linalg.norm(pose_est[:N,:2] - poseGT[:N,:2], axis=1)
 heading_err = np.abs(utils.wrapToPi(pose_est[:N,2] - poseGT[:N,2]))
@@ -298,6 +306,7 @@ for ax, err, tag, ylabel, scaling in zip(ax5, errs, tags[1:], ylabels, scalings)
     ax.set_ylabel(f"[{ylabel}]")
     ax.grid()
 
+ax5[1].set_xlabel("Time [s]")
 fig5.tight_layout()
 
 if save_plots:
