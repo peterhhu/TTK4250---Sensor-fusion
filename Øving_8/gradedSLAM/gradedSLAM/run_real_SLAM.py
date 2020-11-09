@@ -141,7 +141,7 @@ mk = mk_first
 t = timeOdo[0]
 
 # %%  run
-N = 10#K
+N = round(K/20)
 
 doPlot = True
 
@@ -177,7 +177,7 @@ for k in tqdm(range(N)):
 
         t = timeLsr[mk]  # ? reset time to this laser time for next post predict
         odo = odometry(speed[k + 1], steering[k + 1], dt, car)
-        eta, P = slam.predict(xupd[k-1], P, odo)# TODO predict
+        eta, P = slam.predict(eta, P, odo)# TODO predict
 
         z = detectTrees(LASER[mk])
         eta, P, NIS[mk], a[mk] = slam.update(eta, P, z)# TODO update
