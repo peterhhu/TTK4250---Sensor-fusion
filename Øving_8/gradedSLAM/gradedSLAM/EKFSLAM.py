@@ -215,10 +215,9 @@ class EKFSLAM:
 
         Rot = rotmat2d(-x[2])
 
-        delta_m = m - x[:2].reshape(2,1) - rotmat2d(x[2]) @ (self.sensor_offset.reshape(2,1))# TODO, relative position of landmark to robot in world frame. m - rho that appears in (11.15) and (11.16)
-        delta_m_plain = m - x[:2].reshape(2,1)
+        delta_m = m - x[:2].reshape(2,1) # TODO, relative position of landmark to robot in world frame. m - rho that appears in (11.15) and (11.16)
 
-        zc = [Rot @ mi for mi in delta_m.T]# TODO, (2, #measurements), each measured position in cartesian coordinates like
+        zc = delta_m - rotmat2d(x[2]) @ (self.sensor_offset.reshape(2,1))# TODO, (2, #measurements), each measured position in cartesian coordinates like
         # [x coordinates;
         #  y coordinates]
 
@@ -246,12 +245,12 @@ class EKFSLAM:
             ind = 2 * i # starting postion of the ith landmark into H
             inds = slice(ind, ind + 2)  # the inds slice for the ith landmark into H
             jac_z_cb[:2, :2] = -I2
-            jac_z_cb[:, 2] = -Rpihalf @ delta_m_plain[:,i] #delta_m[:, i]
-            jac_z_cb[0,:] = (delta_m[:, i].T / zr[i]) @ jac_z_cb
-            jac_z_cb[1,:] = (delta_m[:, i].T @ Rpihalf.T / (zr[i] ** 2)) @ jac_z_cb
+            jac_z_cb[:, 2] = -Rpihalf @ delta_m[:,i]
+            jac_z_cb[0,:] = (zc[:, i].T / zr[i]) @ jac_z_cb
+            jac_z_cb[1,:] = (zc[:, i].T @ Rpihalf.T / (zr[i] ** 2)) @ jac_z_cb
             Hx[inds,:] = jac_z_cb
-            # Hx[inds,:][0, :] = (delta_m[:, i].T / zr[i]) @ jac_z_cb
-            # Hx[inds,:][1, :] = (delta_m[:, i].T @ Rpihalf.T / (zr[i] ** 2)) @ jac_z_cb
+            # Hx[inds,:][0, :] = (zc[:, i].T / zr[i]) @ jac_z_cb
+            # Hx[inds,:][1, :] = (zc[:, i].T @ Rpihalf.T / (zr[i] ** 2)) @ jac_z_cb
             Hm[inds,inds] = -Hx[inds, 0:2]
             # TODO: Set H or Hx and Hm here
 
