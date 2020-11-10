@@ -178,7 +178,7 @@ class EKFSLAM:
         delta_m = m - x[:2].reshape(2,1) - rotmat2d(x[2]) @ (self.sensor_offset).reshape(2,1)# TODO, relative position of landmark to sensor on robot in world frame
 
         zpredcart = [Rot @ mi for mi in delta_m.T] # TODO, predicted measurements in cartesian coordinates, beware sensor offset for VP
-
+        
         zpred_r = [np.linalg.norm(mi) for mi in delta_m.T]# TODO, ranges
         zpred_theta = [np.arctan2(mi[1],mi[0]) for mi in zpredcart]# TODO, bearings
         zpred = np.vstack([zpred_r, zpred_theta])# TODO, the two arrays above stacked on top of each other vertically like 
@@ -240,17 +240,18 @@ class EKFSLAM:
 
         # proposed way is to go through landmarks one by one
         jac_z_cb = -np.eye(2, 3)  # preallocate and update this for some speed gain if looping
+        I2 = np.eye(2)
         for i in range(numM):  # But this hole loop can be vectorized
             ind = 2 * i # starting postion of the ith landmark into H
             inds = slice(ind, ind + 2)  # the inds slice for the ith landmark into H
-
-            jac_z_cb[:, 2] = -Rpihalf @ delta_m[:,i]
-            delta_x_norm = (zc[:, i].T / zr[i]) @ jac_z_cb
-            delta_x_angle = (zc[:, i].T @ Rpihalf.T / (zr[i] ** 2)) @ jac_z_cb
-            Hx[inds] = np.vstack([delta_x_norm, delta_x_norm])
-            # Hx[inds,:][0, :] = (zc[:, i].T / zr[i]) @ jac_z_cb
-            # Hx[inds,:][1, :] = (zc[:, i].T @ Rpihalf.T / (zr[i] ** 2)) @ jac_z_cb
-            Hm[inds,inds] = -Hx[inds,:2]
+            jac_z_cb[:2, :2] = -I2
+            jac_z_cb[:, 2] = -Rpihalf @ delta_m[:,i] #delta_m[:, i]
+            jac_z_cb[0,:] = (zc[:, i].T / zr[i]) @ jac_z_cb
+            jac_z_cb[1,:] = (zc[:, i].T @ Rpihalf.T / (zr[i] ** 2)) @ jac_z_cb
+            Hx[inds,:] = jac_z_cb
+            # Hx[inds,:][0, :] = (delta_m[:, i].T / zr[i]) @ jac_z_cb
+            # Hx[inds,:][1, :] = (delta_m[:, i].T @ Rpihalf.T / (zr[i] ** 2)) @ jac_z_cb
+            Hm[inds,inds] = -Hx[inds, 0:2]
             # TODO: Set H or Hx and Hm here
 
         assert (H.shape == (2 * numM, 3 + 2 * numM)
@@ -432,7 +433,7 @@ class EKFSLAM:
 
                 # Kalman mean update
                 S_cho_factors = la.cho_factor(Sa) # Optional, used in places for S^-1, see scipy.linalg.cho_factor and scipy.linalg.cho_solve
-                W = P @ Ha.T @ la.inv(Sa) #la.cho_solve(S_cho_factors, np.ones(len(Sa)))# TODO, Kalman gain, can use S_cho_factors
+                W = la.cho_solve(S_cho_factors, Ha @ P.T).T # TODO, Kalman gain, can use S_cho_factors
                 etaupd = eta + W @ v # TODO, Kalman update
 
                 # Kalman cov update: use Joseph form for stability
@@ -464,7 +465,7 @@ class EKFSLAM:
                 z_new_inds[::2] = is_new_lmk
                 z_new_inds[1::2] = is_new_lmk
                 z_new = z[z_new_inds]
-                etaupd, Pupd = self.add_landmarks(eta, P, z_new)# TODO, add new landmarks.
+                etaupd, Pupd = self.add_landmarks(etaupd, Pupd, z_new)# TODO, add new landmarks.
 
         assert np.allclose(Pupd, Pupd.T), "EKFSLAM.update: Pupd must be symmetric"
         assert np.all(np.linalg.eigvals(Pupd) >= 0), "EKFSLAM.update: Pupd must be PSD"
