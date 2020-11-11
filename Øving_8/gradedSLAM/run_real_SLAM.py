@@ -142,7 +142,7 @@ mk = mk_first
 t = timeOdo[0]
 
 # %%  run
-N = 15000
+N = 10000
 
 doPlot = False
 
@@ -239,15 +239,12 @@ ax3.plot(NISnorm[:mk], lw=0.5)
 
 ax3.set_title(f"NIS, {insideCI.mean()*100:.2f}% inside CI")
 
-# THE FOLLOWING PART IS STOLEN FROM SIMULATED,
-# AND WILL CALCULATE ANIS. NOT FINISHED!!!!
+dofs = 2 * total_num_asso
 
-# dofs = 2 * total_num_asso
-
-# CI_ANIS = np.array(chi2.interval(alpha, dofs * N)) / N
-
-# print(f"CI ANIS: {CI_ANIS}")
-# print(f"ANIS: {NISnorm.mean()}")
+# ANIS
+CI_ANIS = np.array(chi2.interval(alpha, dofs)) / total_num_asso
+print(f"CI ANIS: {CI_ANIS}")
+print(f"ANIS: {NISnorm.mean()}")
 
 
 # %% slam

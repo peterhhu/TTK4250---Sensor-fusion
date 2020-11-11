@@ -480,7 +480,7 @@ class EKFSLAM:
         Raises:
             AssertionError: If any input is of the wrong shape, and if debug mode is on, certain numeric properties
         Returns:
-            np.ndarray: NEES for [all, position, heading], shape (3,)
+            np.ndarray: NEES for [all, position, position_x, position_y,  heading], shape (5,)
         """
 
         assert x.shape == (3,), f"EKFSLAM.NEES: x shape incorrect {x.shape}"

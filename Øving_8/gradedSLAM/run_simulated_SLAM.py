@@ -196,7 +196,7 @@ np.set_printoptions(precision=4, linewidth=100)
 # %% Plotting of results
 
 plot_save_path = "./plots/simulated/"
-save_plots : bool = False
+save_plots : bool = True
 
 mins = np.amin(landmarks, axis=0)
 maxs = np.amax(landmarks, axis=0)
@@ -283,19 +283,20 @@ ylabels = ['m', 'deg']
 scalings = np.array([1, 180/np.pi])
 
 fig5, ax5 = plt.subplots(nrows=2, ncols=1, figsize=(10, 10), num=5, clear=True, sharex=True)
+tags = ['pos','heading']
 
 pos_err = np.linalg.norm(pose_est[:N,:2] - poseGT[:N,:2], axis=1)
 heading_err = np.abs(utils.wrapToPi(pose_est[:N,2] - poseGT[:N,2]))
 
 errs = np.vstack((pos_err, heading_err))
 
-for ax, err, tag, ylabel, scaling in zip(ax5, errs, tags[1:], ylabels, scalings):
+for ax, err, tag, ylabel, scaling in zip(ax5, errs, tags, ylabels, scalings):
     ax.plot(err*scaling)
     ax.set_title(f"{tag}: RMSE {np.sqrt((err**2).mean())*scaling:.2f} {ylabel}")
     ax.set_ylabel(f"[{ylabel}]")
     ax.grid()
 
-ax5[1].set_xlabel("Time [s]")
+ax5[1].set_xlabel("Time steps")
 fig5.tight_layout()
 
 if save_plots:
