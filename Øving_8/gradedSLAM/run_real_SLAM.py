@@ -106,23 +106,15 @@ b = 0.5  # laser distance to the left of center
 
 car = Car(L, H, a, b)
 
-# sigmas = np.array([1, 1, 0.12]) * 1e-3 # TODO stolen from simulated by peterhhu
-# CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
-# Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
-
-#R = np.diag([0.08 ** 2, 0.02 ** 2]) # TODO # stolen from simulated by peterhhu
-
-# JCBBalphas = np.array(
-#     [1e-4, 1e-6] # TODO stolen from simulated by peterhhu
-# )
-
-sigmas = np.array([4.5e-1, 4.5e-1,5e-2])#np.array([4.2e-2, 4.2e-2, 2e-2])#np.array([0.61,0.63,0.03])##np.array([5e-3, 5e-3, 2e-2])#np.array([0.0014,0.0015,0.0003])# #np.array([5e-3, 5e-3, 2e-2])## TODO "vanlig": sigma_lat = 0.6109, sigma_long = 0.63459
+sigmas = np.array([1, 1, 0.05]) * 1e-3 
 CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
 Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
 
-R = np.diag([5.5e-2,5.5e-2])**2#np.diag([1e-2, 1.1e-2])#np.diag([8e-2, 1e-2])###np.diag([8e-2, 1e-2])# TODO
+R = np.diag([0.06 ** 2, 0.02 ** 2]) 
 
-JCBBalphas = np.array([0.001,0.001])
+JCBBalphas = np.array(
+    [1e-4, 1e-6]
+)
 
 sensorOffset = np.array([car.a + car.L, car.b])
 doAsso = True
@@ -150,7 +142,7 @@ mk = mk_first
 t = timeOdo[0]
 
 # %%  run
-N = K
+N = 15000
 
 doPlot = False
 

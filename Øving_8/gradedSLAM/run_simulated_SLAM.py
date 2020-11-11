@@ -152,7 +152,7 @@ if doAssoPlot:
     figAsso, axAsso = plt.subplots(num=1, clear=True)
 
 # %% Run simulation
-N = 5
+N = K
 
 print("starting sim (" + str(N) + " iterations)")
 
@@ -261,8 +261,8 @@ if save_plots:
 # ANIS
 dofs = 2 * total_num_asso
 CI_ANIS = np.array(chi2.interval(alpha, dofs)) / total_num_asso
-print(f"CI ANIS: {CI_ANIS}")
-print(f"ANIS: {NISnorm.mean()}")
+print(f"CI ANIS: [{CI_ANIS[0]:.2f} {CI_ANIS[1]:.2f}]")
+print(f"ANIS: {NISnorm.mean():.2f}")
 
 # NEES
 
@@ -281,8 +281,8 @@ for ax, tag, NEES, df in zip(ax4, tags, NEESes.T, dfs):
 
     # ANEESes
     CI_ANEES = np.array(chi2.interval(alpha, df*N)) / N
-    print(f"CI ANEES {tag}: {CI_ANEES}")
-    print(f"ANEES {tag}: {NEES.mean()}")
+    print(f"CI ANEES {tag}: [{CI_ANEES[0]:.2f} {CI_ANEES[1]:.2f}]")
+    print(f"ANEES {tag}: {NEES.mean():.2f}")
 
 fig4.tight_layout()
 
