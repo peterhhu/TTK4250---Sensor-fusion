@@ -152,7 +152,7 @@ if doAssoPlot:
     figAsso, axAsso = plt.subplots(num=1, clear=True)
 
 # %% Run simulation
-N = K
+N = 5
 
 print("starting sim (" + str(N) + " iterations)")
 
@@ -255,15 +255,14 @@ ax3.plot(NISnorm[:N], lw=0.5)
 
 ax3.set_title(f'NIS, {insideCI.mean()*100:.2f}% inside CI')
 
-dofs = 2 * total_num_asso
-
-CI_ANIS = np.array(chi2.interval(alpha, dofs * N)) / N
-
-print(f"CI ANIS: {CI_ANIS}")
-print(f"ANIS: {NISnorm.mean()}")
-
 if save_plots:
     plt.savefig(plot_save_path + "NIS_simulated.pdf", format="pdf")
+
+# ANIS
+dofs = 2 * total_num_asso
+CI_ANIS = np.array(chi2.interval(alpha, dofs)) / total_num_asso
+print(f"CI ANIS: {CI_ANIS}")
+print(f"ANIS: {NISnorm.mean()}")
 
 # NEES
 
@@ -272,6 +271,7 @@ tags = ['all', 'pos', 'pos_x', 'pos_y', 'heading']
 dfs = [3, 2, 1, 1, 1]
 
 for ax, tag, NEES, df in zip(ax4, tags, NEESes.T, dfs):
+    # NEESes
     CI_NEES = chi2.interval(alpha, df)
     ax.plot(np.full(N, CI_NEES[0]), '--')
     ax.plot(np.full(N, CI_NEES[1]), '--')
@@ -279,6 +279,7 @@ for ax, tag, NEES, df in zip(ax4, tags, NEESes.T, dfs):
     insideCI = (CI_NEES[0] <= NEES) * (NEES <= CI_NEES[1])
     ax.set_title(f'NEES {tag}: {insideCI.mean()*100:.2f}% inside CI')
 
+    # ANEESes
     CI_ANEES = np.array(chi2.interval(alpha, df*N)) / N
     print(f"CI ANEES {tag}: {CI_ANEES}")
     print(f"ANEES {tag}: {NEES.mean()}")
