@@ -227,21 +227,29 @@ for k in tqdm(range(N)):
         odo = odometry(speed[k + 1], steering[k + 1], dt, car)
         eta, P = slam.predict(eta, P, odo)
 
+
+
+# %% Plotting of results
+
+plot_save_path = "./plots/real/"
+save_plots : bool = True
 # %% Consistency
 
 # NIS
 insideCI = (CInorm[:mk, 0] <= NISnorm[:mk]) * (NISnorm[:mk] <= CInorm[:mk, 1])
 
-fig3, ax3 = plt.subplots(num=3, clear=True)
+fig3, ax3 = plt.subplots(num=3, figsize=(10,10), clear=True)
 ax3.plot(CInorm[:mk, 0], "--")
 ax3.plot(CInorm[:mk, 1], "--")
 ax3.plot(NISnorm[:mk], lw=0.5)
 
 ax3.set_title(f"NIS, {insideCI.mean()*100:.2f}% inside CI")
 
-dofs = 2 * total_num_asso
+if save_plots:
+    plt.savefig(plot_save_path + "NIS_real.pdf", format="pdf")
 
 # ANIS
+dofs = 2 * total_num_asso
 CI_ANIS = np.array(chi2.interval(alpha, dofs)) / total_num_asso
 print(f"CI ANIS: {CI_ANIS}")
 print(f"ANIS: {NISnorm.mean()}")
@@ -250,7 +258,7 @@ print(f"ANIS: {NISnorm.mean()}")
 # %% slam
 
 if do_raw_prediction:
-    fig5, ax5 = plt.subplots(num=5, clear=True)
+    fig5, ax5 = plt.subplots(num=5, figsize=(10,10), clear=True)
     ax5.scatter(
         Lo_m[timeGps < timeOdo[N - 1]],
         La_m[timeGps < timeOdo[N - 1]],
@@ -263,13 +271,21 @@ if do_raw_prediction:
     ax5.set_title("GPS vs odometry integration")
     ax5.legend()
 
+    if save_plots:
+        plt.savefig(plot_save_path + "GPS_vs_ODOM.pdf", format="pdf")
+
+
 # %%
-fig6, ax6 = plt.subplots(num=6, clear=True)
+fig6, ax6 = plt.subplots(num=6, figsize=(10,10), clear=True)
 ax6.scatter(*eta[3:].reshape(-1, 2).T, color="r", marker="x")
 ax6.plot(*xupd[mk_first:mk, :2].T)
 ax6.set(
     title=f"Steps {k}, laser scans {mk-1}, landmarks {len(eta[3:])//2},\nmeasurements {z.shape[0]}, num new = {np.sum(a[mk] == -1)}"
 )
+
+if save_plots:
+    plt.savefig(plot_save_path + "Trajectories_and_landmarks.pdf", format="pdf")
+
 plt.show()
 
 # %%
