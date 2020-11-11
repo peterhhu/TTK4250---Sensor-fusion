@@ -101,18 +101,6 @@ M = len(landmarks)
 Q = np.diag([1, 1, 0.05])*1e-3 # TODO Best 
 R = np.diag([0.06 ** 2, 0.02 ** 2]) # TODO Best
 
-# Q = np.diag([10, 10, 0.12])*1e-3 # TODO
-# R = np.diag([0.06 ** 2, 0.02 ** 2]) # TODO
-
-#Q = np.diag([10, 10, 0.12])*1e-3 # TODO
-#R = np.diag([0.08 ** 2, 0.02 ** 2]) # TODO
-
-# Q = np.diag([1, 1, 0.12])*1e-3 # TODO
-# R = np.diag([0.08 ** 2, 0.02 ** 2]) # TODO
-
-# Q = np.diag([1, 1, 1]) # TODO BAD
-# R = np.diag([1,1]) # TODO BAD
-
 doAsso = True
 
 JCBBalphas = np.array(
@@ -158,10 +146,10 @@ print("starting sim (" + str(N) + " iterations)")
 
 for k, z_k in tqdm(enumerate(z[:N])):
 
-    eta_hat[k], P_hat[k], NIS[k], a[k] = slam.update(eta_pred[k], P_pred[k], z_k) # TODO update
+    eta_hat[k], P_hat[k], NIS[k], a[k] = slam.update(eta_pred[k], P_pred[k], z_k) # Update
 
     if k < K - 1:
-        eta_pred[k + 1], P_pred[k + 1] = slam.predict(eta_hat[k], P_hat[k], odometry[k]) # TODO predict
+        eta_pred[k + 1], P_pred[k + 1] = slam.predict(eta_hat[k], P_hat[k], odometry[k]) # Predict
 
     assert (
         eta_hat[k].shape[0] == P_hat[k].shape[0]
@@ -179,7 +167,7 @@ for k, z_k in tqdm(enumerate(z[:N])):
         NISnorm[k] = 1
         CInorm[k].fill(1)
 
-    NEESes[k] = EKFSLAM.NEESes(eta_hat[k][:3], P_hat[k][:3, :3], poseGT[k])# TODO, use provided function slam.NEESes
+    NEESes[k] = EKFSLAM.NEESes(eta_hat[k][:3], P_hat[k][:3, :3], poseGT[k])
 
     if doAssoPlot and k > 0:
         axAsso.clear()
