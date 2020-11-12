@@ -53,6 +53,8 @@ try:
     # gives quite nice plots
     plt_styles = ["science", "grid", "bright", "no-latex"]
     plt.style.use(plt_styles)
+    plt.rcParams['pdf.fonttype'] = 42
+    plt.rcParams['font.family'] = 'Calibri'
     print(f"pyplot using style set {plt_styles}")
 except Exception as e:
     print(e)
@@ -142,7 +144,7 @@ mk = mk_first
 t = timeOdo[0]
 
 # %%  run
-N = K
+N = 5000
 
 doPlot = False
 
@@ -268,6 +270,8 @@ if do_raw_prediction:
     )
     ax5.plot(*odox[:N, :2].T, label="odom")
     ax5.grid()
+    ax5.set_ylabel("NORTH [m]")
+    ax5.set_xlabel("EAST [m]")
     ax5.set_title("GPS vs odometry integration")
     ax5.legend()
 
@@ -279,12 +283,31 @@ if do_raw_prediction:
 fig6, ax6 = plt.subplots(num=6, figsize=(10,10), clear=True)
 ax6.scatter(*eta[3:].reshape(-1, 2).T, color="r", marker="x")
 ax6.plot(*xupd[mk_first:mk, :2].T)
+ax6.set_ylabel("NORTH [m]")
+ax6.set_xlabel("EAST [m]")
 ax6.set(
     title=f"Steps {k}, laser scans {mk-1}, landmarks {len(eta[3:])//2},\nmeasurements {z.shape[0]}, num new = {np.sum(a[mk] == -1)}"
 )
 
 if save_plots:
     plt.savefig(plot_save_path + "Trajectories_and_landmarks.pdf", format="pdf")
+
+
+fig7, ax7 = plt.subplots(num=7, figsize=(10,10), clear=True)
+ax7.scatter(
+        Lo_m[timeGps < timeOdo[N - 1]],
+        La_m[timeGps < timeOdo[N - 1]],
+        c="r",
+        marker=".",
+        label="GPS",
+    )
+ax7.plot(*xupd[mk_first:mk, :2].T)
+ax7.set_ylabel("NORTH [m]")
+ax7.set_xlabel("EAST [m]")
+ax7.set_title(r"GPS vs $\mathbf{\hat{x}}$")
+
+if save_plots:
+    plt.savefig(plot_save_path + "Trajcetory_vs_GPS.pdf", format="pdf")
 
 plt.show()
 
