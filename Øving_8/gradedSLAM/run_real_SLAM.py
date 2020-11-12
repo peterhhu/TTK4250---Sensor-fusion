@@ -134,8 +134,7 @@ NIS = np.zeros(mK)
 NISnorm = np.zeros(mK)
 CI = np.zeros((mK, 2))
 CInorm = np.zeros((mK, 2))
-pos_error = np.zeros((Kgps, 2))
-pos_error_norm = np.zeros((Kgps,1))
+pos_error_norm = np.zeros((Kgps))
 total_num_asso = 0
 GNSSk = 0
 
@@ -148,7 +147,7 @@ mk = mk_first
 t = timeOdo[0]
 
 # %%  run
-N = 10000
+N = 5000
 
 doPlot = False
 
@@ -226,9 +225,9 @@ for k in tqdm(range(N)):
             plt.draw()
             plt.pause(0.00001)
 
-        if GNSSk < Kgps - 1 and timeGps[GNSSk] < timeLsr[mk]:
-            pos_error[GNSSk] = np.array([Lo_m[GNSSk], La_m[GNSSk]]) - xupd[GNSSk][:2]
-            pos_error_norm[GNSSk] = np.linalg.norm(pos_error[GNSSk,:])
+        if GNSSk < Kgps - 1 and timeGps[GNSSk] <= timeLsr[mk + 1]:
+            diff = np.array([Lo_m[GNSSk], La_m[GNSSk]]) - xupd[mk][:2]
+            pos_error_norm[GNSSk] = np.linalg.norm(diff)
 
             GNSSk += 1
 
@@ -244,88 +243,92 @@ for k in tqdm(range(N)):
 
 # %% Plotting of results
 
-plot_save_path = "./plots/real/"
-save_plots : bool = True
-# %% Consistency
+do_plot_all : bool = False
 
-# NIS
-insideCI = (CInorm[:mk, 0] <= NISnorm[:mk]) * (NISnorm[:mk] <= CInorm[:mk, 1])
+if do_plot_all:
 
-fig3, ax3 = plt.subplots(num=3, figsize=(10,10), clear=True)
-ax3.plot(CInorm[:mk, 0], "--")
-ax3.plot(CInorm[:mk, 1], "--")
-ax3.plot(NISnorm[:mk], lw=0.5)
+    plot_save_path = "./plots/real/"
+    save_plots : bool = True
+    # %% Consistency
 
-ax3.set_title(f"NIS, {insideCI.mean()*100:.2f}% inside CI")
+    # NIS
+    insideCI = (CInorm[:mk, 0] <= NISnorm[:mk]) * (NISnorm[:mk] <= CInorm[:mk, 1])
 
-if save_plots:
-    plt.savefig(plot_save_path + "NIS_real.pdf", format="pdf")
+    fig3, ax3 = plt.subplots(num=3, figsize=(10,10), clear=True)
+    ax3.plot(CInorm[:mk, 0], "--")
+    ax3.plot(CInorm[:mk, 1], "--")
+    ax3.plot(NISnorm[:mk], lw=0.5)
 
-# ANIS
-dofs = 2 * total_num_asso
-CI_ANIS = np.array(chi2.interval(alpha, dofs)) / total_num_asso
-print(f"CI ANIS: {CI_ANIS}")
-print(f"ANIS: {NISnorm.mean()}")
-
-# pos_error_GNSS
-
-fig4, ax4 = plt.subplots(num=4, figsize=(10,10), clear=True)
-ax4.plot(pos_error_norm)
-ax4.set_ylabel("[m]")
-ax4.set_title("Pos_error_GNSS")
-
-# %% slam
-
-if do_raw_prediction:
-    fig5, ax5 = plt.subplots(num=5, figsize=(10,10), clear=True)
-    ax5.scatter(
-        Lo_m[timeGps < timeOdo[N - 1]],
-        La_m[timeGps < timeOdo[N - 1]],
-        c="r",
-        marker=".",
-        label="GPS",
-    )
-    ax5.plot(*odox[:N, :2].T, label="odom")
-    ax5.grid()
-    ax5.set_ylabel("NORTH [m]")
-    ax5.set_xlabel("EAST [m]")
-    ax5.set_title("GPS vs odometry integration")
-    ax5.legend()
+    ax3.set_title(f"NIS, {insideCI.mean()*100:.2f}% inside CI")
 
     if save_plots:
-        plt.savefig(plot_save_path + "GPS_vs_ODOM.pdf", format="pdf")
+        plt.savefig(plot_save_path + "NIS_real.pdf", format="pdf")
+
+    # ANIS
+    dofs = 2 * total_num_asso
+    CI_ANIS = np.array(chi2.interval(alpha, dofs)) / total_num_asso
+    print(f"CI ANIS: {CI_ANIS}")
+    print(f"ANIS: {NISnorm.mean()}")
+
+    # pos_error_GNSS
+
+    fig4, ax4 = plt.subplots(num=4, figsize=(10,10), clear=True)
+    ax4.plot(timeGps[:GNSSk] ,pos_error_norm[:GNSSk])
+    ax4.set_ylabel("[m]")
+    ax4.set_title("Pos_error_GNSS")
+
+    # %% slam
+
+    if do_raw_prediction:
+        fig5, ax5 = plt.subplots(num=5, figsize=(10,10), clear=True)
+        ax5.scatter(
+            Lo_m[timeGps < timeOdo[N - 1]],
+            La_m[timeGps < timeOdo[N - 1]],
+            c="r",
+            marker=".",
+            label="GPS",
+        )
+        ax5.plot(*odox[:N, :2].T, label="odom")
+        ax5.grid()
+        ax5.set_ylabel("NORTH [m]")
+        ax5.set_xlabel("EAST [m]")
+        ax5.set_title("GPS vs odometry integration")
+        ax5.legend()
+
+        if save_plots:
+            plt.savefig(plot_save_path + "GPS_vs_ODOM.pdf", format="pdf")
 
 
-# %%
-fig6, ax6 = plt.subplots(num=6, figsize=(10,10), clear=True)
-ax6.scatter(*eta[3:].reshape(-1, 2).T, color="r", marker="x")
-ax6.plot(*xupd[mk_first:mk, :2].T)
-ax6.set_ylabel("NORTH [m]")
-ax6.set_xlabel("EAST [m]")
-ax6.set(
-    title=f"Steps {k}, laser scans {mk-1}, landmarks {len(eta[3:])//2},\nmeasurements {z.shape[0]}, num new = {np.sum(a[mk] == -1)}"
-)
-
-if save_plots:
-    plt.savefig(plot_save_path + "Trajectories_and_landmarks.pdf", format="pdf")
-
-
-fig7, ax7 = plt.subplots(num=7, figsize=(10,10), clear=True)
-ax7.scatter(
-        Lo_m[timeGps < timeOdo[N - 1]],
-        La_m[timeGps < timeOdo[N - 1]],
-        c="r",
-        marker=".",
-        label="GPS",
+    # %%
+    fig6, ax6 = plt.subplots(num=6, figsize=(10,10), clear=True)
+    ax6.scatter(*eta[3:].reshape(-1, 2).T, color="r", marker="x")
+    ax6.plot(*xupd[mk_first:mk, :2].T)
+    ax6.set_ylabel("NORTH [m]")
+    ax6.set_xlabel("EAST [m]")
+    ax6.set(
+        title=f"Steps {k}, laser scans {mk-1}, landmarks {len(eta[3:])//2},\nmeasurements {z.shape[0]}, num new = {np.sum(a[mk] == -1)}"
     )
-ax7.plot(*xupd[mk_first:mk, :2].T)
-ax7.set_ylabel("NORTH [m]")
-ax7.set_xlabel("EAST [m]")
-ax7.set_title(r"GPS vs $\mathbf{\hat{x}}$")
 
-if save_plots:
-    plt.savefig(plot_save_path + "Trajcetory_vs_GPS.pdf", format="pdf")
+    if save_plots:
+        plt.savefig(plot_save_path + "Trajectories_and_landmarks.pdf", format="pdf")
 
-plt.show()
+
+    fig7, ax7 = plt.subplots(num=7, figsize=(10,10), clear=True)
+    ax7.scatter(
+            Lo_m[timeGps < timeOdo[N - 1]],
+            La_m[timeGps < timeOdo[N - 1]],
+            c="r",
+            marker=".",
+            label="GPS",
+        )
+    ax7.plot(*xupd[mk_first:mk, :2].T)
+    ax7.set_ylabel("NORTH [m]")
+    ax7.set_xlabel("EAST [m]")
+    ax7.set_title(r"GPS vs $\mathbf{\hat{x}}$")
+
+    if save_plots:
+        plt.savefig(plot_save_path + "Trajcetory_vs_GPS.pdf", format="pdf")
+
+    plt.show()
 
 # %%
