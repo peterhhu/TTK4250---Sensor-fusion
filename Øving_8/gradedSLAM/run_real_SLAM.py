@@ -21,6 +21,7 @@ from matplotlib import animation
 from plotting import ellipse
 from vp_utils import detectTrees, odometry, Car
 from utils import rotmat2d
+from scipy import linalg as la
 
 # %% plot config check and style setup
 
@@ -133,7 +134,10 @@ NIS = np.zeros(mK)
 NISnorm = np.zeros(mK)
 CI = np.zeros((mK, 2))
 CInorm = np.zeros((mK, 2))
+pos_error = np.zeros((Kgps, 2))
+pos_error_norm = np.zeros((Kgps,1))
 total_num_asso = 0
+GNSSk = 0
 
 # Initialize state
 eta = np.array([Lo_m[0], La_m[1], 36 * np.pi / 180]) # you might want to tweak these for a good reference
@@ -144,7 +148,7 @@ mk = mk_first
 t = timeOdo[0]
 
 # %%  run
-N = 5000
+N = 10000
 
 doPlot = False
 
@@ -183,6 +187,7 @@ for k in tqdm(range(N)):
         eta, P = slam.predict(eta, P, odo)# TODO predict
 
         z = detectTrees(LASER[mk])
+
         eta, P, NIS[mk], a[mk] = slam.update(eta, P, z)# TODO update
 
         num_asso = np.count_nonzero(a[mk] > -1)
@@ -221,8 +226,14 @@ for k in tqdm(range(N)):
             plt.draw()
             plt.pause(0.00001)
 
-        mk += 1
+        if GNSSk < Kgps - 1 and timeGps[GNSSk] < timeLsr[mk]:
+            pos_error[GNSSk] = np.array([Lo_m[GNSSk], La_m[GNSSk]]) - xupd[GNSSk][:2]
+            pos_error_norm[GNSSk] = np.linalg.norm(pos_error[GNSSk,:])
 
+            GNSSk += 1
+
+        mk += 1
+ 
     if k < K - 1:
         dt = timeOdo[k + 1] - t
         t = timeOdo[k + 1]
@@ -256,6 +267,12 @@ CI_ANIS = np.array(chi2.interval(alpha, dofs)) / total_num_asso
 print(f"CI ANIS: {CI_ANIS}")
 print(f"ANIS: {NISnorm.mean()}")
 
+# pos_error_GNSS
+
+fig4, ax4 = plt.subplots(num=4, figsize=(10,10), clear=True)
+ax4.plot(pos_error_norm)
+ax4.set_ylabel("[m]")
+ax4.set_title("Pos_error_GNSS")
 
 # %% slam
 
