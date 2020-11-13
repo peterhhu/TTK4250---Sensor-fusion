@@ -113,7 +113,7 @@ sigmas = np.array([np.sqrt(1e-3), np.sqrt(1e-3), np.sqrt(0.05 * 1e-3)])
 CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
 Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
 
-R = np.diag([0.06 ** 2, 0.02 ** 2]) 
+R = np.diag([0.04 ** 2, 0.02 ** 2]) 
 
 JCBBalphas = np.array(
     [1e-4, 1e-6]
@@ -147,7 +147,7 @@ mk = mk_first
 t = timeOdo[0]
 
 # %%  run
-N = K
+N = 2500
 
 doPlot = False
 
@@ -244,7 +244,7 @@ for k in tqdm(range(N)):
 # %% Plotting of results
 
 do_plot_all : bool = True
-#print(f"landmarks: {len(eta[3:])//2}")
+print(f"landmarks: {len(eta[3:])//2}")
 
 if do_plot_all:
 
