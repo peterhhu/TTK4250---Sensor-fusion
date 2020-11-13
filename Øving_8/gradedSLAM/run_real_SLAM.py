@@ -147,7 +147,7 @@ mk = mk_first
 t = timeOdo[0]
 
 # %%  run
-N = 5000
+N = K
 
 doPlot = False
 
@@ -243,7 +243,8 @@ for k in tqdm(range(N)):
 
 # %% Plotting of results
 
-do_plot_all : bool = False
+do_plot_all : bool = True
+#print(f"landmarks: {len(eta[3:])//2}")
 
 if do_plot_all:
 
@@ -271,11 +272,10 @@ if do_plot_all:
     print(f"ANIS: {NISnorm.mean()}")
 
     # pos_error_GNSS
-
     fig4, ax4 = plt.subplots(num=4, figsize=(10,10), clear=True)
     ax4.plot(timeGps[:GNSSk] ,pos_error_norm[:GNSSk])
     ax4.set_ylabel("[m]")
-    ax4.set_title("Pos_error_GNSS")
+    ax4.set_title("Pos_error_GPS")
 
     # %% slam
 

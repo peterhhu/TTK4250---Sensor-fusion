@@ -98,7 +98,7 @@ K = len(z)
 M = len(landmarks)
 
 # %% Initilize
-Q = np.diag([1, 1, 0.05])*1e-3 # TODO Best 
+Q = np.diag([1, 1, 0.05]) * 1e-3 # TODO Best 
 R = np.diag([0.06 ** 2, 0.02 ** 2]) # TODO Best
 
 doAsso = True
@@ -134,8 +134,8 @@ P_pred[0] = np.zeros((3, 3))  # we also say that we are 100% sure about that
 # %% Set up plotting
 # plotting
 
-doAssoPlot = False
-playMovie = False
+doAssoPlot = True
+playMovie = True
 if doAssoPlot:
     figAsso, axAsso = plt.subplots(num=1, clear=True)
 
